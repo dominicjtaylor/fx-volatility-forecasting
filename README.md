@@ -82,3 +82,5 @@ Clone the repo and install dependencies:
 git clone https://github.com/dominicjtaylor/fx-volatility-forecasting.git
 cd fx-volatility-forecasting
 pip install -r requirements.txt
+
+import volare
