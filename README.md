@@ -1,4 +1,4 @@
-# Tech Finance FX Volatility Forecasting
+# volare: Tech Finance FX Volatility Forecasting
 
 This project forecasts FX spot volatility using **LightGBM**, a gradient boosting machine learning model, trained on high-frequency candle data in Python.  
 It demonstrates a complete workflow of feature engineering, model training, validation, and forecasting, with practical applications for liquidity providers and FX traders.
