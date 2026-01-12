@@ -1,8 +1,5 @@
 import matplotlib.pyplot as plt
-import mplfinance as mpf
 plt.style.use('../styles/science.mplstyle')
-# import scienceplots as sps
-# plt.style.use(['science'])
 
 def plot_validation(y_true,y_pred):
     """

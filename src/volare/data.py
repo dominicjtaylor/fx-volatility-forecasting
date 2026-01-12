@@ -1,18 +1,16 @@
 import pandas as pd
 
-def load_candles(filepath):
+def load_candles(filepath,dtype=None,nrows=None):
     """
     Load candlestick data from a CSV file.
     Returns pandas DataFrame with parsed dates.
     """
-    return pd.load_csv(filepath, parse_dates=['timestamp'])
-
-def clean_data(df):
-    """
-    Clean data:
-    - remove duplicates
-    - handle missing values
-    - ensure correct data types
-    """
-    pass
-
+    if dtype is None:
+        dtype = {
+            'open': 'float32',
+            'high': 'float32',
+            'low': 'float32',
+            'close': 'float32',
+            'symbol': 'category'
+            }
+    return pd.read_csv(filepath, parse_dates=['timestamp'], dtype=dtype, nrows=nrows)
