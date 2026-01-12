@@ -9,8 +9,7 @@ It demonstrates a complete workflow of feature engineering, model training, vali
 
 The pipeline consists of:
 
-- **Data ingestion:** import candle data (`data.py`)  
-- **Data cleaning:** parse timestamps, set dtypes, compute log returns  
+- **Data ingestion:** import candle data (`data.py`)
 - **Feature generation** (`features.py`): log returns, high-low ranges, rolling volatility, rolling future volatility, volatility slope, z-score  
 - **Train/test split:** chronological split to respect time dependencies  
 - **Model training** (`model.py`): **LightGBM** trained on engineered features  
