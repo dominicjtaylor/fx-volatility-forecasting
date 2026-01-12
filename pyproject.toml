@@ -1,0 +1,4 @@
+[project]
+name = "fx-volatility-forecasting"
+version = "0.1.0"
+dependencies = []

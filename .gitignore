@@ -1,0 +1,28 @@
+# Ignore all real candle data
+data/*.csv
+
+# Ignore any image files (if you have raw screenshots, etc.)
+data/*.heic
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# VS Code settings
+.vscode/
+
+# Mac system files
+.DS_Store
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
