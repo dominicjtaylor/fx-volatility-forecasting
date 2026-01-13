@@ -75,12 +75,11 @@ The trained model and feature pipeline assume this structure. Applying the model
 | Rolling Vol | 0.0010 | 0.0008 |
 | **LightGBM** | **0.0008** | **0.0006** |
 
-Visualisations are below and are available in `results/plots/`.
+Visualisations are below and are available in `results/plots/`, for the model trained on a single FX currency pair and **only on the first 200,000 candles** of the time series, with predictions evaluated on an unseen 100,000 candles.
 
 ### Predicted vs Actual Volatility
 
-**Figure:** Predicted vs actual log-volatility for a single FX currency pair.  
-The model is trained **only on the first 300,000 candles** of the time series, with predictions evaluated on subsequent, unseen data.
+**Figure:** Predicted vs actual log-volatility.  
 
 *Note:* Results should be interpreted as within-pair temporal generalisation rather than cross-asset performance.
 
@@ -88,9 +87,15 @@ The model is trained **only on the first 300,000 candles** of the time series, w
 
 ### Predicted vs Actual Volatility with Baseline Comparisons
 
-**Figure:** Predicted vs actual log-volatility for a single FX currency pair, compared to standard baselines.  
+**Figure:** Predicted vs actual log-volatility compared to standard baselines.  
 
 ![Predicted vs Actual Volatility Baseline Compare](results/plots/predicted_vs_actual_volatility_baseline_compare.png)
+
+### Statistical Comparison of Baselines and Machine Learning Model
+
+**Figure:** RMSE and MAE of baselines and LightGBM. This model performs 14.7% better than a medium-window rolling volatility.
+
+![Performance vs Baselines](results/plots/performance_baseline_compare.png)
 
 ---
 
