@@ -75,7 +75,16 @@ The trained model and feature pipeline assume this structure. Applying the model
 | Rolling Vol | 0.0010 | 0.0008 |
 | **LightGBM** | **0.0008** | **0.0006** |
 
-Visualisations of predicted vs actual volatility are available in `results/plots/`.
+Visualisations are below and are available in `results/plots/`.
+
+### Predicted vs Actual Volatility
+
+**Figure:** Predicted vs actual log-volatility for a single FX currency pair.  
+The model is trained **only on the first 300,000 candles** of the time series, with predictions evaluated on subsequent, unseen data.
+
+*Note:* Results should be interpreted as within-pair temporal generalisation rather than cross-asset performance.
+
+![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.pdf)
 
 ---
 
