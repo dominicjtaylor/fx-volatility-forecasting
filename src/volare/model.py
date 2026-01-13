@@ -1,4 +1,4 @@
-from lightgbm import LGBMRegressor
+from lightgbm import LGBMRegressor, early_stopping, log_evaluation, record_evaluation
 import numpy as np
 
 def split_data(df, feature_cols, target_col='rolling_future_vol', train_frac=0.8):
@@ -24,14 +24,33 @@ def split_data(df, feature_cols, target_col='rolling_future_vol', train_frac=0.8
     
     return X_train, X_test, y_train, y_test
 
-def train_model(X_train,y_train,X_val=None,y_val=None,**kwargs):
+def train_model(X_train,y_train,X_val,y_val,**kwargs):
     """
     Train a Light Gradient Boosting Machine to predict volatility
     Returns trained model.
     kwargs: Additional parameters for the model.
     """
     model = LGBMRegressor(**kwargs)
-    model.fit(X_train, y_train)#eval_set=[(X_val, y_val)],eval_metric='rmse',early_stopping_rounds=50,verbose=50)
+    # model.fit(X_train, y_train)#eval_set=[(X_val, y_val)],eval_metric='rmse',early_stopping_rounds=50,verbose=50)
+
+    evals_result = {}
+    model.fit(
+        X_train, y_train,
+        eval_set=[(X_val, y_val)],
+        eval_metric='rmse',
+        callbacks=[
+            early_stopping(stopping_rounds=50),
+            log_evaluation(period=50),
+            record_evaluation(evals_result)
+        ]
+    )
+    print(evals_result)
+    return model, evals_result
+
+def retrain_model(X_train,y_train,model):
+    model_refit = LGBMRegressor(**model.get_params())
+    model_refit.n_estimators = model.best_iteration_
+    model_refit.fit(X_train,y_train)
     return model
 
 def evaluate_model(model,X_test,y_test_log,eps=1e-8):
