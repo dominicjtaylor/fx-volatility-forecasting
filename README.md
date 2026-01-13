@@ -43,10 +43,15 @@ By forecasting volatility directly rather than prices, this project highlights a
 
 ## Data
 
-- Historical FX candle data at 10-second resolution is required to run the pipeline. **No real or sample data is included in this repository.**  
-- Columns expected: `timestamp`, `symbol`, `open`, `high`, `low`, `close`  
-- Target: future rolling volatility over forecast horizon H, computed as RMS of log returns  
-- Users must supply their own FX candle data to run the scripts.
+This repository does not include raw FX data.
+
+To run the pipeline, users must provide their own historical FX candle data formatted consistently with the training setup used in this project:
+
+- Fixed time-resolution candles (e.g. 10-second)
+- Columns in order: `timestamp`, `open`, `high`, `low`, `close`
+- Continuous time series without gaps
+
+The trained model and feature pipeline assume this structure. Applying the model to differently formatted data would require retraining or feature redefinition.
 
 ---
 
