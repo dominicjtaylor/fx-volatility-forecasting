@@ -84,7 +84,7 @@ The model is trained **only on the first 300,000 candles** of the time series, w
 
 *Note:* Results should be interpreted as within-pair temporal generalisation rather than cross-asset performance.
 
-![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.pdf)
+![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.png)
 
 ---
 
