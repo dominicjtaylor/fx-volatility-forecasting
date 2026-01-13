@@ -75,7 +75,7 @@ The trained model and feature pipeline assume this structure. Applying the model
 | Rolling Vol | 0.0010 | 0.0008 |
 | **LightGBM** | **0.0008** | **0.0006** |
 
-Visualisations are below and are available in `results/plots/`, for the model trained on a single FX currency pair and **only on the first 200,000 candles** of the time series, with predictions evaluated on an unseen 100,000 candles. The model hyperparameters also need tuning to prevent overfitting to unseen data.
+<!-- Visualisations are below and are available in `results/plots/`, for the model trained on a single FX currency pair and **only on the first 200,000 candles** of the time series, with predictions evaluated on an unseen 100,000 candles. The model hyperparameters also need tuning to prevent overfitting to unseen data.
 
 ### Predicted vs Actual Volatility
 
@@ -95,7 +95,7 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 **Figure:** RMSE and MAE of baselines and LightGBM. This model's prediction errors are 15% smaller than using the simple medium-window rolling volatility as a forecast. The model provides predictive signal beyond simple historical smoothing.
 
-![Performance vs Baselines](results/plots/performance_baseline_compare.png)
+![Performance vs Baselines](results/plots/performance_baseline_compare.png) -->
 
 ---
 
