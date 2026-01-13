@@ -86,6 +86,12 @@ The model is trained **only on the first 300,000 candles** of the time series, w
 
 ![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.png)
 
+### Predicted vs Actual Volatility with Baseline Comparisons
+
+**Figure:** Predicted vs actual log-volatility for a single FX currency pair, compared to standard baselines.  
+
+![Predicted vs Actual Volatility Baseline Compare](results/plots/predicted_vs_actual_volatility_baseline_compare.png)
+
 ---
 
 ## Usage
