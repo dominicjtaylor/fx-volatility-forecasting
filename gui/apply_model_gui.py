@@ -7,6 +7,12 @@ import pickle
 import os
 import re
 from pathlib import Path
+import matplotlib.pyplot as plt
+import sys
+SCRIPT_DIR = Path(__file__).resolve().parent
+SRC_DIR = (SCRIPT_DIR / "../src").resolve()
+sys.path.append(str(SRC_DIR))
+plt.style.use('../styles/science.mplstyle')
 
 # Add src directory to path
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -92,7 +98,18 @@ def apply_model():
         msg = f"First 10 predictions:\n{preds[:10]}"
         if baseline_medium is not None:
             msg += f"\n\nImprovement vs medium rolling vol baseline:\nRMSE: {rmse_improve:.2f}%\nMAE: {mae_improve:.2f}%"
-        messagebox.showinfo("Predictions & Stats", msg)
+        # messagebox.showinfo("Predictions & Stats", msg)
+            print(msg)
+
+        plt.figure(figsize=(10,4))
+        plt.plot(preds, label='Model Prediction', color='steelblue')
+        plt.plot(baseline_medium.values, label='Medium Rolling Volatility', color='orange', alpha=0.7)
+        plt.xlabel('Time step')
+        plt.ylabel('Volatility')
+        plt.title(f'Predictions vs Baseline (Horizon {horizon_seconds}s)')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
         # Save option
         save_path = filedialog.asksaveasfilename(
