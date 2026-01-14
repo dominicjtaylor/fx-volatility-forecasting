@@ -7,20 +7,20 @@ import pickle
 import os
 import re
 from pathlib import Path
-import matplotlib.pyplot as plt
 import sys
-SCRIPT_DIR = Path(__file__).resolve().parent
-SRC_DIR = (SCRIPT_DIR / "../src").resolve()
-sys.path.append(str(SRC_DIR))
+
+# Matplotlib for embedding in Tkinter
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 plt.style.use('../styles/science.mplstyle')
 
 # Add src directory to path
 SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = (SCRIPT_DIR / "../src").resolve()
-os.sys.path.append(str(SRC_DIR))
+sys.path.append(str(SRC_DIR))
 
 from volare import data, features, model
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 # --- Locate available models ---
 MODEL_DIR = SCRIPT_DIR / "../results/models"
@@ -28,14 +28,12 @@ model_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("volare_lgb_h") 
 
 # Extract horizon in seconds from filename
 available_horizons = sorted([int(re.search(r'h(\d+)\.pkl', f).group(1)) for f in model_files])
-
 if not available_horizons:
     raise RuntimeError(f"No LightGBM models found in {MODEL_DIR}")
 
-# Map horizon to model file
 horizon_to_file = {int(re.search(r'h(\d+)\.pkl', f).group(1)): MODEL_DIR / f for f in model_files}
 
-# --- Function to apply model to user data ---
+# --- Function to apply model ---
 def apply_model():
     try:
         horizon_seconds = int(horizon_var.get())
@@ -44,7 +42,6 @@ def apply_model():
         # Load model
         with open(model_file, "rb") as f:
             lgb_model = pickle.load(f)
-        print(f"Loaded model: {model_file.name}")
 
         # Ask user to select CSV
         file_path = filedialog.askopenfilename(
@@ -55,9 +52,9 @@ def apply_model():
             return
 
         # Load data
-        df = data.load_candles(file_path,nrows=300000)
+        df = data.load_candles(file_path, nrows=300000)
 
-        # Compute features for this horizon
+        # Compute features
         k, alpha = 8, 1
         df = features.compute_log_return(df)
         df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, k=k)
@@ -68,60 +65,57 @@ def apply_model():
         df = features.compute_volatility_zscore(df, horizon_seconds=horizon_seconds)
         df = features.compute_volatility_acceleration(df)
 
-        # Extract feature columns
-        feature_cols = [col for col in df.columns if col.startswith('rolling_vol')] + \
-                       [col for col in df.columns if col.startswith('tod_')] + \
-                       [col for col in df.columns if col in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
+        # Extract feature columns and drop rows with NaNs
+        feature_cols = [c for c in df.columns if c.startswith('rolling_vol')] + \
+                       [c for c in df.columns if c.startswith('tod_')] + \
+                       [c for c in df.columns if c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
+        df_clean = df[feature_cols].dropna()
+        X_user = df_clean.values
 
-        X_user = df[feature_cols].dropna().values
-        print(X_user)
+        # Predict
+        preds = lgb_model.predict(X_user, num_threads=os.cpu_count())
 
-        # --- Predict ---
-        preds = lgb_model.predict(X_user)
-
-        # --- Compute baselines ---
+        # Baseline
         rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
         eps = 1e-8
         if rolling_cols:
-            baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].values + eps)[-X_user.shape[0]:]
-            rmse_med = np.sqrt(mean_squared_error(preds, baseline_medium))
-            mae_med = mean_absolute_error(preds, baseline_medium)
-            rmse = np.sqrt(mean_squared_error(preds, preds))  # trivial
-            mae = mean_absolute_error(preds, preds)
-            rmse_improve = 100 * (rmse_med - rmse) / rmse_med if rmse_med != 0 else np.nan
-            mae_improve = 100 * (mae_med - mae) / mae_med if mae_med != 0 else np.nan
+            baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].iloc[df_clean.index].values + eps)
         else:
             baseline_medium = None
-            rmse_improve = mae_improve = np.nan
 
-        # --- Show results ---
-        msg = f"First 10 predictions:\n{preds[:10]}"
+        # --- Plot inside GUI ---
+        # Downsample for speed if too many points
+        max_points = 1000
+        step = max(1, len(preds)//max_points)
+        fig, ax = plt.subplots(figsize=(10,4))
+        ax.plot(preds[::step], label='Model Prediction', color='steelblue')
         if baseline_medium is not None:
-            msg += f"\n\nImprovement vs medium rolling vol baseline:\nRMSE: {rmse_improve:.2f}%\nMAE: {mae_improve:.2f}%"
-        # messagebox.showinfo("Predictions & Stats", msg)
-            print(msg)
+            ax.plot(baseline_medium[::step], label='Medium Rolling Volatility', color='orange', alpha=0.7)
+        ax.set_xlabel('Time step')
+        ax.set_ylabel('Volatility')
+        ax.set_title(f'Predictions vs Baseline (Horizon {horizon_seconds}s)')
+        ax.legend()
+        fig.tight_layout()
 
-        plt.figure(figsize=(10,4))
-        plt.plot(preds, label='Model Prediction', color='steelblue')
-        plt.plot(baseline_medium, label='Medium Rolling Volatility', color='orange', alpha=0.7)
-        plt.xlabel('Time step')
-        plt.ylabel('Volatility')
-        plt.title(f'Predictions vs Baseline (Horizon {horizon_seconds}s)')
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
+        # Clear previous canvas if exists
+        for widget in plot_frame.winfo_children():
+            widget.destroy()
 
-        # Save option
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill='both', expand=True)
+
+        # --- Optionally save predictions ---
         save_path = filedialog.asksaveasfilename(
             title="Save predictions",
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")]
         )
         if save_path:
-            pd.DataFrame({
-                "prediction": preds,
-                "baseline_medium": baseline_medium if baseline_medium is not None else np.nan
-            }).to_csv(save_path, index=False)
+            df_save = pd.DataFrame({"prediction": preds})
+            if baseline_medium is not None:
+                df_save["baseline_medium"] = baseline_medium
+            df_save.to_csv(save_path, index=False)
             messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
 
     except Exception as e:
@@ -131,14 +125,20 @@ def apply_model():
 root = tk.Tk()
 root.title("Apply LightGBM Model")
 
-tk.Label(root, text="Select Horizon (seconds):").pack(pady=5)
+# Plot frame
+plot_frame = tk.Frame(root)
+plot_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
+# Controls frame
+controls_frame = tk.Frame(root)
+controls_frame.pack(fill='x', padx=10, pady=5)
+
+tk.Label(controls_frame, text="Select Horizon (seconds):").pack(side='left')
 horizon_var = tk.StringVar(root)
-horizon_var.set(str(available_horizons[0]))  # default value
+horizon_var.set(str(available_horizons[0]))
+dropdown = tk.OptionMenu(controls_frame, horizon_var, *available_horizons)
+dropdown.pack(side='left', padx=5)
 
-dropdown = tk.OptionMenu(root, horizon_var, *available_horizons)
-dropdown.pack(pady=5)
-
-tk.Button(root, text="Select CSV and Apply Model", command=apply_model).pack(pady=20)
+tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model).pack(side='left', padx=10)
 
 root.mainloop()
