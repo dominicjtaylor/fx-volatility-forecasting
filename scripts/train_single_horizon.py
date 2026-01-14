@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     # --- Load and prepare data ---
     print('Loading data..')
-    nrows = 300000
+    nrows = None
     df0 = data.load_candles(args.file,nrows=nrows)
     if nrows is None:
         nrows = 'all'
