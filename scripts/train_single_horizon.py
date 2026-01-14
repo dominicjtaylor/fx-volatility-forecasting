@@ -6,12 +6,13 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from pathlib import Path
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import sys
 SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = (SCRIPT_DIR / "../src").resolve()
 sys.path.append(str(SRC_DIR))
 from volare import data, features, model
-mpl.style.use('../styles/science.mplstyle')
+plt.style.use('../styles/science.mplstyle')
 
 def train_single_horizon(df, horizon_seconds, k=8, alpha=1):
     """
