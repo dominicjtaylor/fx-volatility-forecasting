@@ -5,58 +5,49 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-import sys
 import re
 from pathlib import Path
 
 # Add src directory to path
 SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = (SCRIPT_DIR / "../src").resolve()
-sys.path.append(str(SRC_DIR))
+os.sys.path.append(str(SRC_DIR))
 
 from volare import data, features, model
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-# --- Parse horizon from command line ---
-if len(sys.argv) != 2:
-    print("Usage: python apply_model_gui.py <horizon_in_seconds>")
-    sys.exit(1)
-
-try:
-    horizon_seconds = int(sys.argv[1])
-except ValueError:
-    print("Horizon must be an integer number of seconds.")
-    sys.exit(1)
-
-# --- Locate model ---
+# --- Locate available models ---
 MODEL_DIR = SCRIPT_DIR / "../results/models"
-pattern = re.compile(rf"volare_lgb_h{horizon_seconds}\.pkl$")
-matching_models = [f for f in os.listdir(MODEL_DIR) if pattern.match(f)]
+model_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("volare_lgb_h") and f.endswith(".pkl")]
 
-if not matching_models:
-    print(f"No model found for horizon {horizon_seconds} seconds in {MODEL_DIR}")
-    sys.exit(1)
+# Extract horizon in seconds from filename
+available_horizons = sorted([int(re.search(r'h(\d+)\.pkl', f).group(1)) for f in model_files])
 
-model_file = MODEL_DIR / matching_models[0]
+if not available_horizons:
+    raise RuntimeError(f"No LightGBM models found in {MODEL_DIR}")
 
-try:
-    with open(model_file, "rb") as f:
-        lgb_model = pickle.load(f)
-    print(f"Loaded model: {matching_models[0]}")
-except Exception as e:
-    print(f"Failed to load model: {e}")
-    sys.exit(1)
+# Map horizon to model file
+horizon_to_file = {int(re.search(r'h(\d+)\.pkl', f).group(1)): MODEL_DIR / f for f in model_files}
 
 # --- Function to apply model to user data ---
 def apply_model():
-    file_path = filedialog.askopenfilename(
-        title="Select CSV file with your candle data",
-        filetypes=[("CSV files", "*.csv")]
-    )
-    if not file_path:
-        return
-
     try:
+        horizon_seconds = int(horizon_var.get())
+        model_file = horizon_to_file[horizon_seconds]
+
+        # Load model
+        with open(model_file, "rb") as f:
+            lgb_model = pickle.load(f)
+        print(f"Loaded model: {model_file.name}")
+
+        # Ask user to select CSV
+        file_path = filedialog.askopenfilename(
+            title="Select CSV file with your candle data",
+            filetypes=[("CSV files", "*.csv")]
+        )
+        if not file_path:
+            return
+
         # Load data
         df = data.load_candles(file_path)
 
@@ -72,11 +63,11 @@ def apply_model():
         df = features.compute_volatility_acceleration(df)
 
         # Extract feature columns
-        feature_cols = [col for col in df_user.columns if col.startswith('rolling_vol')] + \
-                       [col for col in df_user.columns if col.startswith('tod_')] + \
-                       [col for col in df_user.columns if col in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
+        feature_cols = [col for col in df.columns if col.startswith('rolling_vol')] + \
+                       [col for col in df.columns if col.startswith('tod_')] + \
+                       [col for col in df.columns if col in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
 
-        X_user = df_user[feature_cols].values
+        X_user = df[feature_cols].values
 
         # --- Predict ---
         preds = lgb_model.predict(X_user)
@@ -85,13 +76,11 @@ def apply_model():
         rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
         eps = 1e-8
         if rolling_cols:
-            # Take medium window as baseline
-            baseline_medium = np.log(df_user[rolling_cols[len(rolling_cols)//2]].values + eps)
+            baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].values + eps)
             rmse_med = np.sqrt(mean_squared_error(preds, baseline_medium))
             mae_med = mean_absolute_error(preds, baseline_medium)
-            rmse = np.sqrt(mean_squared_error(preds, preds))  # RMSE of model vs itself (trivial)
-            mae = mean_absolute_error(preds, preds)           # MAE of model vs itself (trivial)
-            # Improvement over medium baseline
+            rmse = np.sqrt(mean_squared_error(preds, preds))  # trivial
+            mae = mean_absolute_error(preds, preds)
             rmse_improve = 100 * (rmse_med - rmse) / rmse_med if rmse_med != 0 else np.nan
             mae_improve = 100 * (mae_med - mae) / mae_med if mae_med != 0 else np.nan
         else:
@@ -122,9 +111,16 @@ def apply_model():
 
 # --- GUI ---
 root = tk.Tk()
-root.title(f"Apply LightGBM Model (Horizon: {horizon_seconds}s)")
+root.title("Apply LightGBM Model")
 
-tk.Label(root, text=f"Model horizon: {horizon_seconds} seconds").pack(pady=10)
+tk.Label(root, text="Select Horizon (seconds):").pack(pady=5)
+
+horizon_var = tk.StringVar(root)
+horizon_var.set(str(available_horizons[0]))  # default value
+
+dropdown = tk.OptionMenu(root, horizon_var, *available_horizons)
+dropdown.pack(pady=5)
+
 tk.Button(root, text="Select CSV and Apply Model", command=apply_model).pack(pady=20)
 
 root.mainloop()
