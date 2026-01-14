@@ -162,16 +162,16 @@ if __name__ == "__main__":
     # --- Plot performance ---
     fig, ax = plt.subplots(1,2,figsize=(12,4))
 
-    ax[0].plot(df_results['horizon_sec']/60, df_results['RMSE'], marker='o', label='RMSE')
-    ax[0].plot(df_results['horizon_sec']/60, df_results['MAE'], marker='s', label='MAE')
+    ax[0].plot(df_results['horizon_sec']/60, df_results['RMSE'], color='steelblue', marker='o', label='RMSE')
+    ax[0].plot(df_results['horizon_sec']/60, df_results['MAE'], color='skyblue', marker='s', label='MAE')
     ax[0].set_xlabel('Horizon (minutes)')
     ax[0].set_ylabel('Error')
     ax[0].set_title('Absolute performance vs horizon')
     ax[0].grid(True, alpha=0.3)
     ax[0].legend()
 
-    ax[1].plot(df_results['horizon_sec']/60, df_results['RMSE_vs_medium(%)'], marker='o', label='RMSE improvement')
-    ax[1].plot(df_results['horizon_sec']/60, df_results['MAE_vs_medium(%)'], marker='s', label='MAE improvement')
+    ax[1].plot(df_results['horizon_sec']/60, df_results['RMSE_vs_medium(%)'], color='steelblue', marker='o', label='RMSE improvement')
+    ax[1].plot(df_results['horizon_sec']/60, df_results['MAE_vs_medium(%)'], color='skyblue', marker='s', label='MAE improvement')
     ax[1].set_xlabel('Horizon (minutes)')
     ax[1].set_ylabel('% improvement vs medium baseline')
     ax[1].set_title('Relative improvement vs horizon')
