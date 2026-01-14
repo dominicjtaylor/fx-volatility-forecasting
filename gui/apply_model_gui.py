@@ -67,7 +67,7 @@ def apply_model():
                        [col for col in df.columns if col.startswith('tod_')] + \
                        [col for col in df.columns if col in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
 
-        X_user = df[feature_cols].values
+        X_user = df[feature_cols].dropna().values
 
         # --- Predict ---
         preds = lgb_model.predict(X_user)
