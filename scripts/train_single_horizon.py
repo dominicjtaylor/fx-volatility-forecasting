@@ -160,7 +160,6 @@ if __name__ == "__main__":
     print("\nMulti-horizon performance:\n", df_results)
 
     # --- Plot performance ---
-    import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1,2,figsize=(12,4))
 
     ax[0].plot(df_results['horizon_sec']/60, df_results['RMSE'], marker='o', label='RMSE')
