@@ -124,7 +124,7 @@ def apply_model():
 root = tk.Tk()
 root.title(f"Apply LightGBM Model (Horizon: {horizon_seconds}s)")
 
-tk.Label(root, text=f"Model horizon: {horizon_sec} seconds").pack(pady=10)
+tk.Label(root, text=f"Model horizon: {horizon_seconds} seconds").pack(pady=10)
 tk.Button(root, text="Select CSV and Apply Model", command=apply_model).pack(pady=20)
 
 root.mainloop()
