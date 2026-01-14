@@ -12,7 +12,7 @@ The pipeline consists of:
 - **Data ingestion:** import candle data (`data.py`)
 - **Feature generation** (`features.py`): log returns, high-low ranges, rolling volatility, rolling future volatility, volatility slope, z-score  
 - **Train/test split:** chronological split to respect time dependencies  
-- **Model training** (`model.py`): **LightGBM** trained on engineered features  
+- **Model training** (`model.py`): **LightGBM** trained on engineered features with optimised fitting  
 - **Model validation** (`model.py`): RMSE, MAE, and visual inspection  
 - **Forecasting** (`predict.py`): generate volatility forecasts on new data  
 - **Visualisation** (`visualisation.py`): plots and performance metrics  
@@ -23,7 +23,7 @@ The pipeline consists of:
 
 - Customisable forecast horizons (e.g., 10–30 minutes)  
 - Multi-window rolling volatility features  
-- Volatility-of-volatility and slope features  
+- Volatility-of-volatility, slope, and acceleration features  
 - Chronological train/test split and optional walk-forward validation  
 - Model persistence: save and reload **LightGBM** models for downstream use  
 
@@ -71,27 +71,41 @@ The trained model and feature pipeline assume this structure. Applying the model
 
 ## Results
 
-| Model | RMSE | MAE |
+<!-- | Model | RMSE | MAE |
 |-------|------|-----|
 | Persistence | 0.0012 | 0.0009 |
 | Rolling Vol | 0.0010 | 0.0008 |
-| **LightGBM** | **0.0008** | **0.0006** |
+| **LightGBM** | **0.0008** | **0.0006** | -->
 
-Visualisations are below and are available in `results/plots/`, for the model trained on a single FX currency pair and **only on the first 240,000 candles** of the time series, with predictions evaluated on an unseen 60,000 candles. The model hyperparameters also need tuning to prevent overfitting to unseen data.
+Visualisations are below and are available in `results/plots/`, for the model trained on a single FX currency pair and **only on the first 800,000 candles** of the time series, with predictions evaluated on an unseen 200,000 candles. The model hyperparameters are yet to be tuned. Features used to train the model include:
 
-### Predicted vs Actual Volatility
+- **Past rolling volatility**
+- **Lagged rolling volatility**
+- **Multi-window rolling volatility**
+- **Intra-day seasonality**
+- **Volatility slope**
+- **Volatility z-score**
+- **Volatility acceleration**
+
+<!-- ### Predicted vs Actual Volatility
 
 **Figure:** Predicted vs actual log-volatility.  
 
 *Note:* Results should be interpreted as within-pair temporal generalisation rather than cross-asset performance.
 
-![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.png)
+![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.png) -->
 
 ### Predicted vs Actual Volatility with Baseline Comparisons
 
 **Figure:** Predicted vs actual log-volatility compared to standard baselines.  
 
 ![Predicted vs Actual Volatility Baseline Compare](results/plots/predicted_vs_actual_volatility_baseline_compare.png)
+
+### Model Residuals for Regime Handling
+
+**Figure:** Residuals between the data and model (for first 50,000 candles) with rolling volatility for reference, to identify regime handling.
+
+![Model Residuals for Regime Handling](results/plots/model_residual_volatility.png)
 
 ### Statistical Comparison of Baselines and Machine Learning Model
 

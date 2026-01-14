@@ -163,6 +163,13 @@ def compute_volatility_zscore(df, forecast_horizon_seconds, z_window_multiplier=
 
     return df
 
+def compute_volatility_acceleration(df):
+    df = df.copy()
+
+    df['vol_accel'] = df['rolling_vol'] * df['vol_slope']
+
+    return df
+
 def compute_future_rolling_volatility(df, horizon=2*60):
     """
     Compute future volatility of log returns over a given horizon.
