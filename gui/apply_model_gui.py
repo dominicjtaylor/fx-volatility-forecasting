@@ -61,14 +61,15 @@ def apply_model():
         df_user = pd.read_csv(file_path)
 
         # Compute features for this horizon
-        df_user = features.compute_log_return(df_user)
-        df_user = features.compute_rolling_volatility(df_user, horizon_seconds=horizon_sec)
-        df_user = features.compute_lagged_rolling_volatility(df_user, horizon_seconds=horizon_sec)
-        df_user = features.compute_multi_window_rolling_vol(df_user, horizon_seconds=horizon_sec)
-        df_user = features.compute_intraday_seasonality(df_user)
-        df_user = features.compute_volatility_slope(df_user, horizon_seconds=horizon_sec)
-        df_user = features.compute_volatility_zscore(df_user, horizon_seconds=horizon_sec)
-        df_user = features.compute_volatility_acceleration(df_user)
+        k, alpha = 8, 1
+        df = features.compute_log_return(df)
+        df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, k=k)
+        df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, alpha=alpha, k=k)
+        df = features.compute_multi_window_rolling_vol(df, horizon_seconds=horizon_seconds)
+        df = features.compute_intraday_seasonality(df)
+        df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)
+        df = features.compute_volatility_zscore(df, horizon_seconds=horizon_seconds)
+        df = features.compute_volatility_acceleration(df)
 
         # Extract feature columns
         feature_cols = [col for col in df_user.columns if col.startswith('rolling_vol')] + \
