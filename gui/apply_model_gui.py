@@ -55,7 +55,7 @@ def apply_model():
             return
 
         # Load data
-        df = data.load_candles(file_path)
+        df = data.load_candles(file_path,nrows=300000)
 
         # Compute features for this horizon
         k, alpha = 8, 1
