@@ -109,7 +109,7 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ### Statistical Comparison of Baselines and Machine Learning Model
 
-**Figure:** RMSE and MAE of baselines and LightGBM. This model's prediction errors are 14% smaller than using the simple medium-window rolling volatility as a forecast. The model provides predictive signal beyond simple historical smoothing.
+**Figure:** RMSE and MAE of baselines and LightGBM. This model's prediction errors are 33% smaller than using the simple medium-window rolling volatility as a forecast. The model provides predictive signal beyond simple historical smoothing.
 
 ![Performance vs Baselines](results/plots/performance_baseline_compare.png)
 
