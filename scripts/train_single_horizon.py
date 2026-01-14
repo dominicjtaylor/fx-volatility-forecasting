@@ -100,6 +100,8 @@ if __name__ == "__main__":
     print('Loading data..')
     nrows = 300000
     df0 = data.load_candles(args.file,nrows=nrows)
+    if nrows is None:
+        nrows = 'all'
     print(df0.head())
 
     models = {}

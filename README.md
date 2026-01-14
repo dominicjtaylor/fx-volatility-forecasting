@@ -113,6 +113,12 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ![Performance vs Baselines](results/plots/performance_baseline_compare.png)
 
+### Performance vs Horizon
+
+**Figure:** Performance of the model vs horizon. Left panel shows that the performance degrades with increasing horizon. Right panel shows that the model improves by 22% compared to a medium-window rolling volatility baseline at short horizons, falls at a horizon of 30 mins, and improves again for longer horizons (60 mins).
+
+![Performance vs Horizon](results/plots/multi_horizon_performance_300000_cand.png)
+
 ---
 
 ## Usage

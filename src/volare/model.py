@@ -24,6 +24,12 @@ def split_data(df, feature_cols, target_col='rolling_future_vol', train_frac=0.8
     
     return X_train, X_test, y_train, y_test
 
+def split_training(X_train,y_train,val_frac=0.1):
+    val_index = int(len(X_train) * (1 - val_frac))
+    X_tr, X_val = X_train[:val_index], X_train[val_index:]
+    y_tr, y_val = y_train[:val_index], y_train[val_index:]
+    return X_tr, X_val, y_tr, y_val
+
 def train_model(X_train,y_train,X_val,y_val,**kwargs):
     """
     Train a Light Gradient Boosting Machine to predict volatility
@@ -44,7 +50,7 @@ def train_model(X_train,y_train,X_val,y_val,**kwargs):
             record_evaluation(evals_result)
         ]
     )
-    print(evals_result)
+    # print(evals_result)
     return model, evals_result
 
 def retrain_model(X_train,y_train,model):
