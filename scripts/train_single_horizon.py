@@ -75,8 +75,8 @@ def train_single_horizon(df, horizon_seconds, k=8, alpha=1):
 
     # --- Save model ---
     print('\nSaving model..')
-    os.makedirs('results/models', exist_ok=True)
-    model_file = f'results/models/volare_lgb_h{int(horizon_seconds)}.pkl'
+    os.makedirs('../results/models', exist_ok=True)
+    model_file = f'../results/models/volare_lgb_h{int(horizon_seconds)}.pkl'
     with open(model_file, 'wb') as f:
         pickle.dump(model_final, f)
     print(f"Saved final model to {model_file}\n")
