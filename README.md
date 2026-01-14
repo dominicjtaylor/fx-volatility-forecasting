@@ -115,7 +115,9 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ### Performance vs Horizon
 
-**Figure:** Performance of the model vs horizon. Left panel shows that the error decreases with increasing horizon. Right panel shows that the model improves by 22% compared to a medium-window rolling volatility baseline at short horizons, falls at a horizon of 30 mins, and improves again for longer horizons (60 mins).
+**Figure:** Model performance as a function of forecast horizon.  
+- **Left panel:** Forecasting error decreases as the horizon increases, indicating improved accuracy for longer-term predictions.  
+- **Right panel:** Relative improvement of the model compared to a medium-window rolling volatility baseline. The model achieves a 22% improvement at short horizons, dips around a 30-minute horizon, and rises again to approximately 22% for longer horizons (60 minutes).
 
 ![Performance vs Horizon](results/plots/multi_horizon_performance_300000_cand.png)
 
@@ -123,11 +125,29 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ## Usage
 
-Clone the repo and install dependencies:
+### Install
+
+## Usage
+
+### Install
+
+Clone the repo and install the package in editable mode. This links the package to your Python environment while keeping the source code editable.
 
 ```bash
 git clone https://github.com/dominicjtaylor/fx-volatility-forecasting.git
 cd fx-volatility-forecasting
 pip install -r requirements.txt
+pip install -e .
+```
 
+### Python
+
+Once the package is installed, you can import it in your Python scripts or interactive sessions:
+
+```python
 import volare
+
+# Example: call a function from the package
+result = volare.compute_rolling_volatility(data)
+print(result)
+```
