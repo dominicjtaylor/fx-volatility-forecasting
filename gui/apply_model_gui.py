@@ -14,7 +14,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = (SCRIPT_DIR / "../src").resolve()
 sys.path.append(str(SRC_DIR))
 
-from volare import features, model
+from volare import data, features, model
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 # --- Parse horizon from command line ---
@@ -58,7 +58,7 @@ def apply_model():
 
     try:
         # Load data
-        df_user = pd.read_csv(file_path)
+        df = data.load_candles(file_path)
 
         # Compute features for this horizon
         k, alpha = 8, 1
