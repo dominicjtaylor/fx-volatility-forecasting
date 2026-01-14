@@ -68,6 +68,7 @@ def apply_model():
                        [col for col in df.columns if col in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
 
         X_user = df[feature_cols].dropna().values
+        print(X_user)
 
         # --- Predict ---
         preds = lgb_model.predict(X_user)
@@ -76,7 +77,7 @@ def apply_model():
         rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
         eps = 1e-8
         if rolling_cols:
-            baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].values + eps)
+            baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].values + eps)[-X_user.shape[0]:]
             rmse_med = np.sqrt(mean_squared_error(preds, baseline_medium))
             mae_med = mean_absolute_error(preds, baseline_medium)
             rmse = np.sqrt(mean_squared_error(preds, preds))  # trivial
