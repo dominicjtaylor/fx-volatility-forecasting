@@ -103,7 +103,7 @@ def apply_model():
 
         plt.figure(figsize=(10,4))
         plt.plot(preds, label='Model Prediction', color='steelblue')
-        plt.plot(baseline_medium.values, label='Medium Rolling Volatility', color='orange', alpha=0.7)
+        plt.plot(baseline_medium, label='Medium Rolling Volatility', color='orange', alpha=0.7)
         plt.xlabel('Time step')
         plt.ylabel('Volatility')
         plt.title(f'Predictions vs Baseline (Horizon {horizon_seconds}s)')
