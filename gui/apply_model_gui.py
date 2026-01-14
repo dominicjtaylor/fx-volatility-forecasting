@@ -23,18 +23,18 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 try:
-    horizon_sec = int(sys.argv[1])
+    horizon_seconds = int(sys.argv[1])
 except ValueError:
     print("Horizon must be an integer number of seconds.")
     sys.exit(1)
 
 # --- Locate model ---
 MODEL_DIR = SCRIPT_DIR / "../results/models"
-pattern = re.compile(rf"volare_lgb_h{horizon_sec}\.pkl$")
+pattern = re.compile(rf"volare_lgb_h{horizon_seconds}\.pkl$")
 matching_models = [f for f in os.listdir(MODEL_DIR) if pattern.match(f)]
 
 if not matching_models:
-    print(f"No model found for horizon {horizon_sec} seconds in {MODEL_DIR}")
+    print(f"No model found for horizon {horizon_seconds} seconds in {MODEL_DIR}")
     sys.exit(1)
 
 model_file = MODEL_DIR / matching_models[0]
@@ -122,7 +122,7 @@ def apply_model():
 
 # --- GUI ---
 root = tk.Tk()
-root.title(f"Apply LightGBM Model (Horizon: {horizon_sec}s)")
+root.title(f"Apply LightGBM Model (Horizon: {horizon_seconds}s)")
 
 tk.Label(root, text=f"Model horizon: {horizon_sec} seconds").pack(pady=10)
 tk.Button(root, text="Select CSV and Apply Model", command=apply_model).pack(pady=20)
