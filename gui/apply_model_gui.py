@@ -104,6 +104,7 @@ def apply_model():
         canvas = FigureCanvasTkAgg(fig, master=plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
+        root.update()
 
         # --- Optionally save predictions ---
         save_path = filedialog.asksaveasfilename(
