@@ -37,7 +37,7 @@ horizon_to_file = {int(re.search(r'h(\d+)\.pkl', f).group(1)): MODEL_DIR / f for
 # --- Storage for predictions ---
 preds_storage = None
 
-def compute_predictions(file_path,model_file,horizon_seconds):
+def compute_predictions(file_path,model_file,horizon_seconds,loading_label):
     global preds_storage, canvas_storage
 
     # Load model
@@ -80,6 +80,9 @@ def compute_predictions(file_path,model_file,horizon_seconds):
 
     # Enable save button
     save_button.config(state='normal')
+
+    if loading_label.winfo_exists():
+        loading_label.destroy()
 
     # --- Plot inside GUI ---
     max_points = 1000
@@ -142,10 +145,9 @@ def apply_model():
         print('Computing label should appear here')
         loading_label = tk.Label(plot_frame, text="Computing predictions, please wait...")
         loading_label.pack()
-        root.update_idletasks()  # Force GUI to render the label
 
         # Defer actual computation slightly so GUI renders first
-        root.after(10, lambda: compute_predictions(file_path, model_file, horizon_seconds))
+        root.after(50, lambda: compute_predictions(file_path, model_file, horizon_seconds, loading_label))
         
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
