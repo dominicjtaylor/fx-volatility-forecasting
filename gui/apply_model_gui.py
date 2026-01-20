@@ -102,24 +102,6 @@ class VolatilityApp(QtWidgets.QMainWindow):
             if path.endswith(".csv"):
                 self.load_csv(path)
 
-    # --- Load CSV ---
-    def load_csv(self, path=None):
-        if path is None:
-            path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV file", "", "CSV Files (*.csv)")
-        if not path:
-            return
-        # Load last 300,000 candles
-        self.df_full = data.load_candles(path, nrows=300_000)
-
-        # Remove info label
-        if self.info_label:
-            self.plot_layout.removeWidget(self.info_label)
-            self.info_label.deleteLater()
-            self.info_label = None
-
-        # Apply model with selected horizon
-        self.apply_model()
-
     # --- Apply model ---
     def apply_model(self):
         if self.df_full is None:
@@ -166,12 +148,33 @@ class VolatilityApp(QtWidgets.QMainWindow):
         # Plot
         self.update_plot()
 
-    # --- Update plot ---
+    # --- Load CSV ---
+    def load_csv(self, path=None):
+        if path is None:  # called by button
+            path, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Select CSV file", "", "CSV Files (*.csv)"
+            )
+        if not path:
+            return
+
+        # Load last 300_000 candles
+        self.df_full = data.load_candles(path, nrows=300_000)
+
+        # Remove info label if it exists
+        if self.info_label:
+            self.plot_layout.removeWidget(self.info_label)
+            self.info_label.deleteLater()
+            self.info_label = None
+
+        # Apply model with selected horizon
+        self.apply_model()
+
+    # --- Update plot with dark mode support ---
     def update_plot(self):
         if self.df_full is None or self.preds_storage is None:
             return
 
-        # Clear previous plot
+        # Remove previous canvas
         if self.canvas:
             self.plot_layout.removeWidget(self.canvas)
             self.canvas.deleteLater()
@@ -181,31 +184,65 @@ class VolatilityApp(QtWidgets.QMainWindow):
         baseline = self.preds_storage["baseline"]
         df = self.df_full
 
-        # Time axis
-        timestamps = df['timestamp'].values.astype(float)  # convert to seconds if needed
+        timestamps = df['timestamp'].values.astype(float)
         last_time = timestamps[-1]
         display_seconds = self.time_slider.value()
         start_time = max(timestamps[0], last_time - display_seconds)
-
         mask = (timestamps >= start_time) & (timestamps <= last_time)
+
         t_disp = timestamps[mask]
         preds_disp = preds[mask]
         baseline_disp = baseline[mask] if baseline is not None else None
 
-        # Figure
-        fig, ax = plt.subplots(figsize=(12,5))
-        ax.plot(t_disp, preds_disp, label="Model Prediction", color="steelblue")
-        if baseline_disp is not None:
-            ax.plot(t_disp, baseline_disp, label="Medium Rolling Volatility", color="orange", alpha=0.7)
+        # Detect dark mode (macOS / Windows)
+        dark_mode = False
+        try:
+            import platform
+            if platform.system() == "Darwin":
+                # macOS: detect dark appearance
+                from subprocess import check_output
+                out = check_output(
+                    ["defaults", "read", "-g", "AppleInterfaceStyle"]
+                ).decode().strip()
+                dark_mode = out.lower() == "dark"
+        except:
+            pass
 
-        # Horizon shading
+        fig, ax = plt.subplots(figsize=(12,5))
+
+        if dark_mode:
+            fig.patch.set_facecolor('#2e3b4e')
+            ax.set_facecolor('#2e3b4e')
+            ax.tick_params(colors='white')
+            ax.yaxis.label.set_color('white')
+            ax.xaxis.label.set_color('white')
+            ax.title.set_color('white')
+            ax.spines['bottom'].set_color('white')
+            ax.spines['top'].set_color('white')
+            ax.spines['left'].set_color('white')
+            ax.spines['right'].set_color('white')
+            # Light line colors
+            pred_color = 'cyan'
+            base_color = 'orange'
+            horizon_alpha = 0.3
+        else:
+            pred_color = 'steelblue'
+            base_color = 'orange'
+            horizon_alpha = 0.3
+
+        ax.plot(t_disp, preds_disp, label="Model Prediction", color=pred_color)
+        if baseline_disp is not None:
+            ax.plot(t_disp, baseline_disp, label="Medium Rolling Volatility", color=base_color, alpha=0.7)
+
         horizon_seconds = int(self.horizon_combo.currentText())
-        ax.axvspan(last_time, last_time + horizon_seconds, color="grey", alpha=0.3, label=f"Horizon {horizon_seconds}s")
+        ax.axvspan(last_time, last_time + horizon_seconds, color="grey", alpha=horizon_alpha,
+                label=f"Horizon {horizon_seconds}s")
 
         ax.set_xlabel("Time")
         ax.set_ylabel("Volatility")
         ax.set_title("Predictions vs Baseline")
         ax.legend()
+
         fig.tight_layout()
 
         self.canvas = FigureCanvas(fig)
