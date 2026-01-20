@@ -37,7 +37,7 @@ horizon_to_file = {int(re.search(r'h(\d+)\.pkl', f).group(1)): MODEL_DIR / f for
 # --- Storage for predictions ---
 preds_storage = None
 
-def compute_predictions(file_path,model_file):
+def compute_predictions(file_path,model_file,horizon_seconds):
     global preds_storage, canvas_storage
 
     # Load model
@@ -139,7 +139,7 @@ def apply_model():
             widget.destroy()
         tk.Label(plot_frame, text="Computing predictions, please wait...").pack()
 
-        root.after(100, lambda: compute_predictions(file_path,model_file))
+        root.after(100, lambda: compute_predictions(file_path,model_file,horizon_seconds))
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
