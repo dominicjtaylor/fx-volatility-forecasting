@@ -109,18 +109,18 @@ def apply_model():
         canvas.get_tk_widget().update_idletasks()
         # root.update()
 
-        # --- Optionally save predictions ---
-        save_path = filedialog.asksaveasfilename(
-            title="Save predictions",
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")]
-        )
-        if save_path:
-            df_save = pd.DataFrame({"prediction": preds})
-            if baseline_medium is not None:
-                df_save["baseline_medium"] = baseline_medium
-            df_save.to_csv(save_path, index=False)
-            messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
+        # # --- Optionally save predictions ---
+        # save_path = filedialog.asksaveasfilename(
+        #     title="Save predictions",
+        #     defaultextension=".csv",
+        #     filetypes=[("CSV files", "*.csv")]
+        # )
+        # if save_path:
+        #     df_save = pd.DataFrame({"prediction": preds})
+        #     if baseline_medium is not None:
+        #         df_save["baseline_medium"] = baseline_medium
+        #     df_save.to_csv(save_path, index=False)
+        #     messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
@@ -149,5 +149,33 @@ dropdown = tk.OptionMenu(controls_frame, horizon_var, *available_horizons)
 dropdown.pack(side='left', padx=5)
 
 tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model).pack(side='left', padx=10)
+
+# --- function to save predictions ---
+def save_predictions():
+    if preds_storage is None:
+        messagebox.showwarning("Warning", "No predictions to save yet.")
+        return
+
+    save_path = filedialog.asksaveasfilename(
+        title="Save predictions",
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv")]
+    )
+    if save_path:
+        df_save = pd.DataFrame({"prediction": preds_storage["preds"]})
+        if preds_storage["baseline"] is not None:
+            df_save["baseline_medium"] = preds_storage["baseline"]
+        df_save.to_csv(save_path, index=False)
+        messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
+
+# --- storage for predictions ---
+preds_storage = None
+
+# --- inside apply_model, after computing preds and baseline ---
+preds_storage = {"preds": preds, "baseline": baseline_medium}
+
+# enable save button
+save_button.config(state='normal')
+
 
 root.mainloop()
