@@ -176,8 +176,8 @@ save_button = tk.Button(controls_frame, text="Save Predictions", command=save_pr
 save_button.pack(side='left', padx=10)
 
 # Show initially on top
-root.lift()
 root.update()
+root.lift()
 root.attributes("-topmost", True)
 root.after(500, lambda: root.attributes("-topmost", False))
 
