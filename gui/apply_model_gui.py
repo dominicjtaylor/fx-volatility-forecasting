@@ -157,6 +157,7 @@ root.geometry("1200x700")
 # Show initially on top
 root.lift()
 root.attributes("-topmost", True)
+root.update()
 root.after(500, lambda: root.attributes("-topmost", False))
 
 # Plot frame
