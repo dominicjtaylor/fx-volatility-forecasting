@@ -140,12 +140,11 @@ def apply_model():
 
         loading_label = tk.Label(plot_frame, text="Computing predictions, please wait...")
         loading_label.pack()
+        root.update_idletasks()  # Force GUI to render the label
 
-        root.update()  # <-- use update() instead of update_idletasks()
+        # Defer actual computation slightly so GUI renders first
+        root.after(10, lambda: compute_and_plot(file_path, model_file, horizon_seconds))
         
-        # Now compute predictions
-        compute_predictions(file_path, model_file, horizon_seconds)
-
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
 
@@ -155,9 +154,9 @@ root.title("volare LightGBM model application")
 root.geometry("1200x700")
 
 # Show initially on top
-root.lift()
-root.attributes("-topmost", True)
-root.after(500, lambda: root.attributes("-topmost", False))
+# root.lift()
+# root.attributes("-topmost", True)
+# root.after(500, lambda: root.attributes("-topmost", False))
 
 # Plot frame
 plot_frame = tk.Frame(root)
@@ -174,10 +173,18 @@ dropdown = tk.OptionMenu(controls_frame, horizon_var, *available_horizons)
 dropdown.pack(side='left', padx=5)
 
 # Apply model button
-tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model).pack(side='left', padx=10)
+# tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model).pack(side='left', padx=10)
+tk.Button(controls_frame, text="Select CSV and Apply Model", command=lambda: root.after(50, apply_model)).pack(side='left', padx=10)
 
 # Save predictions button (initially disabled)
 save_button = tk.Button(controls_frame, text="Save Predictions", command=save_predictions, state='disabled')
 save_button.pack(side='left', padx=10)
+
+def bring_to_front():
+    root.lift()
+    root.attributes("-topmost", True)
+    root.after(1000, lambda: root.attributes("-topmost", False))
+
+root.after_idle(bring_to_front)
 
 root.mainloop()
