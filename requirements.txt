@@ -5,3 +5,4 @@ matplotlib==3.10.3
 seaborn==0.13.2
 scikit-learn==1.6.0
 IPython==8.15.0
+PyQt6==6.10.2
