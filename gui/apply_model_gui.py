@@ -8,6 +8,8 @@ import os
 import re
 from pathlib import Path
 import sys
+import matplotlib
+matplotlib.use("TkAgg")
 
 # Matplotlib for embedding in Tkinter
 import matplotlib.pyplot as plt
@@ -104,7 +106,8 @@ def apply_model():
         canvas = FigureCanvasTkAgg(fig, master=plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
-        root.update()
+        canvas.get_tk_widget().update_idletasks()
+        # root.update()
 
         # --- Optionally save predictions ---
         save_path = filedialog.asksaveasfilename(
