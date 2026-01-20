@@ -154,6 +154,11 @@ root = tk.Tk()
 root.title("volare LightGBM model application")
 root.geometry("1200x700")
 
+# Show initially on top
+root.lift()
+root.attributes("-topmost", True)
+root.after(500, lambda: root.attributes("-topmost", False))
+
 # Plot frame
 plot_frame = tk.Frame(root)
 plot_frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -174,14 +179,5 @@ tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model
 # Save predictions button (initially disabled)
 save_button = tk.Button(controls_frame, text="Save Predictions", command=save_predictions, state='disabled')
 save_button.pack(side='left', padx=10)
-
-# --- Function to temporarily make window topmost ---
-def bring_to_front():
-    root.lift()
-    root.attributes("-topmost", True)
-    root.after(1000, lambda: root.attributes("-topmost", False))
-
-# Schedule the window to appear on top after it’s mapped
-root.after_idle(bring_to_front)
 
 root.mainloop()
