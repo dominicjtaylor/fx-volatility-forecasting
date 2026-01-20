@@ -37,6 +37,69 @@ horizon_to_file = {int(re.search(r'h(\d+)\.pkl', f).group(1)): MODEL_DIR / f for
 # --- Storage for predictions ---
 preds_storage = None
 
+def compute_predictions(file_path,model_file):
+    global preds_storage, canvas_storage
+
+    # Load model
+    with open(model_file, "rb") as f:
+        lgb_model = pickle.load(f)
+
+    # Load data
+    df = data.load_candles(file_path, nrows=1000)
+
+    # Compute features
+    k, alpha = 8, 1
+    df = features.compute_log_return(df)
+    df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, k=k)
+    df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, alpha=alpha, k=k)
+    df = features.compute_multi_window_rolling_vol(df, horizon_seconds=horizon_seconds)
+    df = features.compute_intraday_seasonality(df)
+    df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)
+    df = features.compute_volatility_zscore(df, horizon_seconds=horizon_seconds)
+    df = features.compute_volatility_acceleration(df)
+
+    # Extract feature columns and drop rows with NaNs
+    feature_cols = [c for c in df.columns if c.startswith('rolling_vol')] + \
+                    [c for c in df.columns if c.startswith('tod_')] + \
+                    [c for c in df.columns if c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
+    df_clean = df[feature_cols].dropna()
+    X_user = df_clean.values
+
+    # Predict
+    preds = lgb_model.predict(X_user, num_threads=os.cpu_count())
+
+    # Baseline
+    rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
+    eps = 1e-8
+    baseline_medium = None
+    if rolling_cols:
+        baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].iloc[df_clean.index].values + eps)
+
+    # Store predictions for saving
+    preds_storage = {"preds": preds, "baseline": baseline_medium}
+
+    # Enable save button
+    save_button.config(state='normal')
+
+    # --- Plot inside GUI ---
+    max_points = 1000
+    step = max(1, len(preds)//max_points)
+    fig, ax = plt.subplots(figsize=(10,4))
+    ax.plot(preds[::step], label='Model Prediction', color='steelblue')
+    if baseline_medium is not None:
+        ax.plot(baseline_medium[::step], label='Medium Rolling Volatility', color='orange', alpha=0.7)
+    ax.set_xlabel('Time step')
+    ax.set_ylabel('Volatility')
+    ax.set_title(f'Predictions vs Baseline (Horizon {horizon_seconds}s)')
+    ax.legend()
+    fig.tight_layout()
+
+    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+    canvas.draw()
+    canvas.get_tk_widget().pack(fill='both', expand=True)
+    canvas.get_tk_widget().update_idletasks()
+    canvas_storage = canvas
+
 # --- Function to save predictions ---
 def save_predictions():
     global preds_storage
@@ -63,10 +126,6 @@ def apply_model():
         horizon_seconds = int(horizon_var.get())
         model_file = horizon_to_file[horizon_seconds]
 
-        # Load model
-        with open(model_file, "rb") as f:
-            lgb_model = pickle.load(f)
-
         # Ask user to select CSV
         file_path = filedialog.askopenfilename(
             title="Select CSV file with your candle data",
@@ -75,64 +134,12 @@ def apply_model():
         if not file_path:
             return
 
-        # Load data
-        df = data.load_candles(file_path, nrows=1000)
-
-        # Compute features
-        k, alpha = 8, 1
-        df = features.compute_log_return(df)
-        df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, k=k)
-        df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, alpha=alpha, k=k)
-        df = features.compute_multi_window_rolling_vol(df, horizon_seconds=horizon_seconds)
-        df = features.compute_intraday_seasonality(df)
-        df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)
-        df = features.compute_volatility_zscore(df, horizon_seconds=horizon_seconds)
-        df = features.compute_volatility_acceleration(df)
-
-        # Extract feature columns and drop rows with NaNs
-        feature_cols = [c for c in df.columns if c.startswith('rolling_vol')] + \
-                       [c for c in df.columns if c.startswith('tod_')] + \
-                       [c for c in df.columns if c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
-        df_clean = df[feature_cols].dropna()
-        X_user = df_clean.values
-
-        # Predict
-        preds = lgb_model.predict(X_user, num_threads=os.cpu_count())
-
-        # Baseline
-        rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
-        eps = 1e-8
-        baseline_medium = None
-        if rolling_cols:
-            baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].iloc[df_clean.index].values + eps)
-
-        # Store predictions for saving
-        preds_storage = {"preds": preds, "baseline": baseline_medium}
-
-        # Enable save button
-        save_button.config(state='normal')
-
-        # --- Plot inside GUI ---
-        max_points = 1000
-        step = max(1, len(preds)//max_points)
-        fig, ax = plt.subplots(figsize=(10,4))
-        ax.plot(preds[::step], label='Model Prediction', color='steelblue')
-        if baseline_medium is not None:
-            ax.plot(baseline_medium[::step], label='Medium Rolling Volatility', color='orange', alpha=0.7)
-        ax.set_xlabel('Time step')
-        ax.set_ylabel('Volatility')
-        ax.set_title(f'Predictions vs Baseline (Horizon {horizon_seconds}s)')
-        ax.legend()
-        fig.tight_layout()
-
         # Clear previous plot
         for widget in plot_frame.winfo_children():
             widget.destroy()
+        tk.Label(plot_frame, text="Computing predictions, please wait...").pack()
 
-        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill='both', expand=True)
-        canvas.get_tk_widget().update_idletasks()
+        root.after(100, lambda: compute_predictions(file_path,model_file))
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
