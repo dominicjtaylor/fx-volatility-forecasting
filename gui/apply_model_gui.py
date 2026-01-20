@@ -140,9 +140,11 @@ def apply_model():
 
         loading_label = tk.Label(plot_frame, text="Computing predictions, please wait...")
         loading_label.pack()
-        root.update_idletasks()
 
-        root.after(100, lambda: compute_predictions(file_path,model_file,horizon_seconds))
+        root.update()  # <-- use update() instead of update_idletasks()
+        
+        # Now compute predictions
+        compute_predictions(file_path, model_file, horizon_seconds)
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
