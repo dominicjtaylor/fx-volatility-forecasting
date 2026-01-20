@@ -137,7 +137,9 @@ def apply_model():
         # Clear previous plot
         for widget in plot_frame.winfo_children():
             widget.destroy()
-
+        
+        print('Destroyed widgets')
+        print('Computing label should appear here')
         loading_label = tk.Label(plot_frame, text="Computing predictions, please wait...")
         loading_label.pack()
         root.update_idletasks()  # Force GUI to render the label
