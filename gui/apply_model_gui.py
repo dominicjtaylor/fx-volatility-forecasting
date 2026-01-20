@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import numpy as np
 import pandas as pd
+import re
 
 from PyQt6 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
