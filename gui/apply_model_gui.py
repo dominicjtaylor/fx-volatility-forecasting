@@ -125,7 +125,7 @@ def apply_model():
 # --- GUI ---
 root = tk.Tk()
 root.title("volare LightGBM model application")
-root.geometry("1400x900")
+root.geometry("1200x700")
 
 # Make window appear on top initially
 root.attributes("-topmost", True)
