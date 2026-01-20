@@ -137,7 +137,10 @@ def apply_model():
         # Clear previous plot
         for widget in plot_frame.winfo_children():
             widget.destroy()
-        tk.Label(plot_frame, text="Computing predictions, please wait...").pack()
+
+        loading_label = tk.Label(plot_frame, text="Computing predictions, please wait...")
+        loading_label.pack()
+        root.update_idletasks()
 
         root.after(100, lambda: compute_predictions(file_path,model_file,horizon_seconds))
 
