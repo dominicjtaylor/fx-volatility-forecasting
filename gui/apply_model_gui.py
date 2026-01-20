@@ -127,10 +127,9 @@ root = tk.Tk()
 root.title("volare LightGBM model application")
 root.geometry("1200x700")
 
-# Make window appear on top initially
-root.attributes("-topmost", True)
-root.update()  # force it to show on top
-root.attributes("-topmost", False)
+root.lift()                # bring to front
+root.attributes("-topmost", True)  # temporarily on top
+root.after(500, lambda: root.attributes("-topmost", False)) # remove always-on-top after 0.5s 
 
 # Plot frame
 plot_frame = tk.Frame(root)
