@@ -175,10 +175,13 @@ tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model
 save_button = tk.Button(controls_frame, text="Save Predictions", command=save_predictions, state='disabled')
 save_button.pack(side='left', padx=10)
 
-# Show initially on top
-root.update()
-root.lift()
-root.attributes("-topmost", True)
-root.after(500, lambda: root.attributes("-topmost", False))
+# --- Function to temporarily make window topmost ---
+def bring_to_front():
+    root.lift()
+    root.attributes("-topmost", True)
+    root.after(1000, lambda: root.attributes("-topmost", False))
+
+# Schedule the window to appear on top after it’s mapped
+root.after_idle(bring_to_front)
 
 root.mainloop()
