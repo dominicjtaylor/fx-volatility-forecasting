@@ -76,7 +76,7 @@ def apply_model():
             return
 
         # Load data
-        df = data.load_candles(file_path, nrows=300000)
+        df = data.load_candles(file_path, nrows=1000)
 
         # Compute features
         k, alpha = 8, 1
