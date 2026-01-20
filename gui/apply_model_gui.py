@@ -182,7 +182,7 @@ class VolareApp(QtWidgets.QMainWindow):
 
     # --- Plotting function ---
     def plot_predictions(self):
-        if self.preds_storage is None:
+        if self.preds_storage is None or self.df_full is None:
             return
 
         # Clear previous plot
@@ -193,23 +193,33 @@ class VolareApp(QtWidgets.QMainWindow):
 
         preds = self.preds_storage["preds"]
         baseline = self.baseline_full
-        n_display = self.candle_slider.value()
 
-        t_hist = np.arange(max(0, len(preds)-n_display), len(preds))
-        preds_disp = preds[-n_display:]
-        baseline_disp = baseline[-n_display:] if baseline is not None else None
+        # --- Time axis ---
+        # Assuming df_full has a 'timestamp' column in seconds
+        timestamps = self.df_full.index.values  # or self.df_full['timestamp'].values if it's a column
+        last_time = timestamps[-1]
+        display_seconds = self.candle_slider.value()
+        # Determine start time for window
+        start_time = max(timestamps[0], last_time - display_seconds)
+
+        # Mask for display window
+        mask = (timestamps >= start_time) & (timestamps <= last_time)
+        t_disp = timestamps[mask]
+        preds_disp = preds[mask]
+        baseline_disp = baseline[mask] if baseline is not None else None
 
         fig, ax = plt.subplots(figsize=(12, 5))
-        ax.plot(t_hist, preds_disp, label="Model Prediction", color="steelblue")
+        ax.plot(t_disp, preds_disp, label="Model Prediction", color="steelblue")
         if baseline_disp is not None:
-            ax.plot(t_hist, baseline_disp, label="Medium Rolling Volatility", color="orange", alpha=0.7)
+            ax.plot(t_disp, baseline_disp, label="Medium Rolling Volatility", color="orange", alpha=0.7)
 
-        # Forward horizon line
-        ax.axvline(t_hist[-1], linestyle='dashed', color='black', label=f"Horizon +{self.horizon_combo.currentText()}s")
+        # Horizon as shaded region after last candle
+        horizon_seconds = int(self.horizon_combo.currentText())
+        ax.axvspan(last_time, last_time + horizon_seconds, color="grey", alpha=0.3, label=f"Horizon {horizon_seconds}s")
 
-        ax.set_xlabel("Time step")
+        ax.set_xlabel("Time")
         ax.set_ylabel("Volatility")
-        ax.set_title(f"Predictions vs Baseline")
+        ax.set_title("Predictions vs Baseline")
         ax.legend()
         fig.tight_layout()
 
