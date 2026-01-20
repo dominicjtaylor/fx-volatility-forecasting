@@ -124,7 +124,12 @@ def apply_model():
 
 # --- GUI ---
 root = tk.Tk()
-root.title("Apply LightGBM Model")
+root.title("volare LightGBM model application")
+
+# Make window appear on top initially
+root.attributes("-topmost", True)
+root.update()  # force it to show on top
+root.attributes("-topmost", False)
 
 # Plot frame
 plot_frame = tk.Frame(root)

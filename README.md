@@ -127,10 +127,6 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ### Install
 
-## Usage
-
-### Install
-
 Clone the repo and install the package in editable mode. This links the package to your Python environment while keeping the source code editable.
 
 ```bash
