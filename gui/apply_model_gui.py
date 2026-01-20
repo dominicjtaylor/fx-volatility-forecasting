@@ -9,9 +9,9 @@ import re
 from pathlib import Path
 import sys
 import matplotlib
-matplotlib.use("TkAgg")
 
-# Matplotlib for embedding in Tkinter
+# Ensure Tkinter backend
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -28,15 +28,37 @@ from volare import data, features, model
 MODEL_DIR = SCRIPT_DIR / "../results/models"
 model_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("volare_lgb_h") and f.endswith(".pkl")]
 
-# Extract horizon in seconds from filename
 available_horizons = sorted([int(re.search(r'h(\d+)\.pkl', f).group(1)) for f in model_files])
 if not available_horizons:
     raise RuntimeError(f"No LightGBM models found in {MODEL_DIR}")
 
 horizon_to_file = {int(re.search(r'h(\d+)\.pkl', f).group(1)): MODEL_DIR / f for f in model_files}
 
-# --- Function to apply model ---
+# --- Storage for predictions ---
+preds_storage = None
+
+# --- Function to save predictions ---
+def save_predictions():
+    global preds_storage
+    if preds_storage is None:
+        messagebox.showwarning("Warning", "No predictions to save yet.")
+        return
+
+    save_path = filedialog.asksaveasfilename(
+        title="Save predictions",
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv")]
+    )
+    if save_path:
+        df_save = pd.DataFrame({"prediction": preds_storage["preds"]})
+        if preds_storage["baseline"] is not None:
+            df_save["baseline_medium"] = preds_storage["baseline"]
+        df_save.to_csv(save_path, index=False)
+        messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
+
+# --- Function to apply model and plot ---
 def apply_model():
+    global preds_storage
     try:
         horizon_seconds = int(horizon_var.get())
         model_file = horizon_to_file[horizon_seconds]
@@ -80,13 +102,17 @@ def apply_model():
         # Baseline
         rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
         eps = 1e-8
+        baseline_medium = None
         if rolling_cols:
             baseline_medium = np.log(df[rolling_cols[len(rolling_cols)//2]].iloc[df_clean.index].values + eps)
-        else:
-            baseline_medium = None
+
+        # Store predictions for saving
+        preds_storage = {"preds": preds, "baseline": baseline_medium}
+
+        # Enable save button
+        save_button.config(state='normal')
 
         # --- Plot inside GUI ---
-        # Downsample for speed if too many points
         max_points = 1000
         step = max(1, len(preds)//max_points)
         fig, ax = plt.subplots(figsize=(10,4))
@@ -99,7 +125,7 @@ def apply_model():
         ax.legend()
         fig.tight_layout()
 
-        # Clear previous canvas if exists
+        # Clear previous plot
         for widget in plot_frame.winfo_children():
             widget.destroy()
 
@@ -107,32 +133,19 @@ def apply_model():
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
         canvas.get_tk_widget().update_idletasks()
-        # root.update()
-
-        # # --- Optionally save predictions ---
-        # save_path = filedialog.asksaveasfilename(
-        #     title="Save predictions",
-        #     defaultextension=".csv",
-        #     filetypes=[("CSV files", "*.csv")]
-        # )
-        # if save_path:
-        #     df_save = pd.DataFrame({"prediction": preds})
-        #     if baseline_medium is not None:
-        #         df_save["baseline_medium"] = baseline_medium
-        #     df_save.to_csv(save_path, index=False)
-        #     messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
 
-# --- GUI ---
+# --- GUI setup ---
 root = tk.Tk()
 root.title("volare LightGBM model application")
 root.geometry("1200x700")
 
-root.lift()                # bring to front
-root.attributes("-topmost", True)  # temporarily on top
-root.after(500, lambda: root.attributes("-topmost", False)) # remove always-on-top after 0.5s 
+# Show initially on top
+root.lift()
+root.attributes("-topmost", True)
+root.after(500, lambda: root.attributes("-topmost", False))
 
 # Plot frame
 plot_frame = tk.Frame(root)
@@ -148,34 +161,11 @@ horizon_var.set(str(available_horizons[0]))
 dropdown = tk.OptionMenu(controls_frame, horizon_var, *available_horizons)
 dropdown.pack(side='left', padx=5)
 
+# Apply model button
 tk.Button(controls_frame, text="Select CSV and Apply Model", command=apply_model).pack(side='left', padx=10)
 
-# --- function to save predictions ---
-def save_predictions():
-    if preds_storage is None:
-        messagebox.showwarning("Warning", "No predictions to save yet.")
-        return
-
-    save_path = filedialog.asksaveasfilename(
-        title="Save predictions",
-        defaultextension=".csv",
-        filetypes=[("CSV files", "*.csv")]
-    )
-    if save_path:
-        df_save = pd.DataFrame({"prediction": preds_storage["preds"]})
-        if preds_storage["baseline"] is not None:
-            df_save["baseline_medium"] = preds_storage["baseline"]
-        df_save.to_csv(save_path, index=False)
-        messagebox.showinfo("Saved", f"Predictions saved to {save_path}")
-
-# --- storage for predictions ---
-preds_storage = None
-
-# --- inside apply_model, after computing preds and baseline ---
-preds_storage = {"preds": preds, "baseline": baseline_medium}
-
-# enable save button
-save_button.config(state='normal')
-
+# Save predictions button (initially disabled)
+save_button = tk.Button(controls_frame, text="Save Predictions", command=save_predictions, state='disabled')
+save_button.pack(side='left', padx=10)
 
 root.mainloop()
