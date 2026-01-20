@@ -143,7 +143,7 @@ def apply_model():
         root.update_idletasks()  # Force GUI to render the label
 
         # Defer actual computation slightly so GUI renders first
-        root.after(10, lambda: compute_and_plot(file_path, model_file, horizon_seconds))
+        root.after(10, lambda: compute_predictions(file_path, model_file, horizon_seconds))
         
     except Exception as e:
         messagebox.showerror("Error", f"Failed to apply model:\n{e}")
