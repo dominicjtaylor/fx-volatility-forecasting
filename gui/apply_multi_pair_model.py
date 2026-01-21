@@ -139,7 +139,7 @@ class VolatilityApp(QWidget):
                             [c for c in df.columns if c.startswith('tod_')] + \
                             [c for c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
 
-        self.df_clean = df[self.feature_cols].dropna().reset_index(drop=True)
+        self.df_clean = df[self.feature_cols].dropna()
         X = self.df_clean.values
         self.preds = self.model.predict(X)
 
@@ -177,12 +177,13 @@ class VolatilityApp(QWidget):
         seconds = minutes * 60
 
         print('Compute time for axes')
-        t_end = self.timestamps.iloc[self.df_clean.index[-1]]
+        pos_idx = np.searchsorted(self.df.index.values, self.df_clean.index.values)
+        t_end = self.timestamps.iloc[pos_idx[-1]]
         t_start = t_end - pd.Timedelta(seconds=seconds)
-        mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
+        mask = (self.timestamps.iloc[pos_idx] >= t_start) & (self.timestamps.iloc[pos_idx] <= t_end)
 
         print('Get timestamps')
-        t_display = self.timestamps.iloc[self.df_clean.index][mask]
+        t_display = self.timestamps.iloc[pos_idx][mask]
         preds_display = self.preds[mask]
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
