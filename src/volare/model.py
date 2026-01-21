@@ -136,70 +136,70 @@ def evaluate_model(model,X_test,y_test_log,eps=1e-8):
 
 #     return X_future, t_future
 
-def simulate_future_features_autoregressive(df, timestamps, horizon_seconds, k, alpha):
+def simulate_future_features_conditional(df, timestamps, horizon_seconds):
     """
-    Autoregressive future feature simulation with initial feature freezing
-    to avoid instability in early horizon steps.
-    """
+    Generate future feature vectors over a given horizon assuming
+    no structural change in volatility (conditional forecast).
+    Rolling volatility features are frozen at their last observed values.
+    Only deterministic time features (e.g. time-of-day) are updated.
 
-    # --- setup ---
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Historical DataFrame with all computed features.
+        Must contain the feature columns expected by the model.
+    timestamps : pd.Series
+        Historical timestamps corresponding to df.
+    horizon_seconds : int
+        Total seconds to forecast into the future.
+
+    Returns
+    -------
+    X_future : np.ndarray
+        Array of shape (num_steps, n_features) containing future features.
+    t_future : pd.DatetimeIndex
+        Future timestamps.
+    """
+    if df.empty or len(df) < 2:
+        raise ValueError("Input df must have at least 2 rows")
+
+    # Time resolution from data
     time_res = (timestamps.iloc[1] - timestamps.iloc[0]).total_seconds()
     num_steps = int(np.ceil(horizon_seconds / time_res))
 
-    freeze_seconds = horizon_seconds / 2
-    freeze_steps = int(np.ceil(freeze_seconds / time_res))
-
+    # Future timestamps start immediately after last observation
+    t_start = timestamps.iloc[-1] + pd.Timedelta(seconds=time_res)
     t_future = pd.date_range(
-        start=timestamps.iloc[-1],
+        start=t_start,
         periods=num_steps,
         freq=pd.Timedelta(seconds=time_res)
     )
 
-    window_size = int(np.ceil(k * horizon_seconds / time_res))
-    history = df.iloc[-window_size:].copy().reset_index(drop=True)
+    # Last observed feature row (this is the conditional state)
+    last_row = df.iloc[[-1]].copy()
 
-    feature_cols = [
-        c for c in df.columns
-        if c.startswith('rolling_vol')
-        or c.startswith('tod_')
-        or c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']
-    ]
+    # Feature columns in model order
+    feature_cols = (
+        [c for c in df.columns if c.startswith("rolling_vol")] +
+        [c for c in df.columns if c.startswith("tod_")] +
+        [c for c in df.columns if c in ["vol_of_vol", "vol_slope", "vol_zscore", "vol_accel"]]
+    )
 
     future_features = []
 
-    # Cache last stable feature state
-    frozen_features = history.iloc[-1][feature_cols].copy()
+    for ts in t_future:
+        row = last_row.copy()
 
-    for step, ts in enumerate(t_future):
+        # Update timestamp
+        row["timestamp"] = ts
 
-        new_row = history.iloc[[-1]].copy()
-        new_row['timestamp'] = ts
+        # Update deterministic intraday features only
+        if "tod_sin" in row.columns and "tod_cos" in row.columns:
+            seconds_in_day = ts.hour * 3600 + ts.minute * 60 + ts.second
+            row["tod_sin"] = np.sin(2 * np.pi * seconds_in_day / 86400)
+            row["tod_cos"] = np.cos(2 * np.pi * seconds_in_day / 86400)
 
-        # Always update time-of-day
-        new_row['tod_sin'] = np.sin(2 * np.pi * ts.hour / 24 + 2 * np.pi * ts.minute / 1440)
-        new_row['tod_cos'] = np.cos(2 * np.pi * ts.hour / 24 + 2 * np.pi * ts.minute / 1440)
+        future_features.append(row[feature_cols].values[0])
 
-        history = pd.concat([history, new_row], ignore_index=True)
-
-        if step < freeze_steps:
-            # --- freeze rolling features ---
-            features_vec = frozen_features.values
-        else:
-            # --- recompute rolling features ---
-            dfw = history.copy()
-            dfw = features.compute_rolling_volatility(dfw, horizon_seconds, k)
-            dfw = features.compute_lagged_rolling_volatility(dfw, horizon_seconds, alpha, k)
-            dfw = features.compute_multi_window_rolling_vol(dfw, horizon_seconds)
-            dfw = features.compute_volatility_slope(dfw, horizon_seconds)
-            dfw = features.compute_volatility_zscore(dfw, horizon_seconds)
-            dfw = features.compute_volatility_acceleration(dfw)
-            dfw = features.compute_future_rolling_volatility(dfw, horizon_seconds)
-
-            features_vec = dfw.iloc[-1][feature_cols].values
-            frozen_features = dfw.iloc[-1][feature_cols].copy()
-
-        future_features.append(features_vec)
-
-        history = history.iloc[-window_size:].reset_index(drop=True)
-
-    return np.vstack(future_features), t_future
+    X_future = np.vstack(future_features)
+    return X_future, t_future
