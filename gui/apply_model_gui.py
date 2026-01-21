@@ -178,7 +178,8 @@ class VolatilityApp(QWidget):
         print('Done simulating future features')
         # self.pred_horizon = self.model.predict(X_future)
         pred_future = self.model.predict(X_future)
-        pred_future += self.preds[-1] - pred_future[0]
+        offset = self.preds[-1] - pred_future[0]
+        pred_future[0] += offset
         self.pred_horizon = pred_future
 
         self.export_btn.setEnabled(True)
