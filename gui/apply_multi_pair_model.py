@@ -177,6 +177,10 @@ class VolatilityApp(QWidget):
         seconds = minutes * 60
 
         print('Compute time for axes')
+        if self.df_clean.empty:
+            QMessageBox.critical(self, "Error", "No valid data after computing features. Check CSV or horizon.")
+            return
+
         t_end = self.timestamps.iloc[self.df_clean.index[-1]]
         t_start = t_end - pd.Timedelta(seconds=seconds)
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
