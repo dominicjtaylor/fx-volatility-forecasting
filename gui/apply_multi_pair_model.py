@@ -109,6 +109,7 @@ class VolatilityApp(QWidget):
                 raise ValueError("Cannot parse currency pair from filename")
             currencies = stem.split('-')[1]
             self.model_file = Path(MODEL_DIR) / f"volare_lgb_{currencies}_h{HORIZON_SECONDS}.pkl"
+            print('Using file:',self.model_file)
 
             self.apply_model()
 
