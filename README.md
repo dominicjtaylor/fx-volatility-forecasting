@@ -97,7 +97,7 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ### Predicted vs Actual Volatility with Baseline Comparisons
 
-**Figure:** Predicted vs actual log-volatility compared to standard baselines.  
+**Figure:** Predicted vs actual log-volatility compared to standard baselines for a horizon of 30 mins. The model learns the feature mapping of the data.
 
 ![Predicted vs Actual Volatility Baseline Compare](results/plots/predicted_vs_actual_volatility_baseline_compare.png)
 
