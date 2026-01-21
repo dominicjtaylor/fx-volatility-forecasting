@@ -168,7 +168,7 @@ def simulate_future_features_conditional(df, timestamps, horizon_seconds):
     num_steps = int(np.ceil(horizon_seconds / time_res))
 
     # Future timestamps start immediately after last observation
-    t_start = timestamps.iloc[-1] + pd.Timedelta(seconds=time_res)
+    t_start = timestamps.iloc[-1]
     t_future = pd.date_range(
         start=t_start,
         periods=num_steps,
