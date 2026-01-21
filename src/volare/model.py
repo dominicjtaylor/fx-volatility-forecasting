@@ -192,13 +192,13 @@ def simulate_future_features_autoregressive(df, timestamps, horizon_seconds, k, 
         
         # Compute rolling features using the full history window
         df_window = history_window.copy()
-        df_window = features.compute_rolling_volatility(df_window, horizon_seconds=time_res, k=k)
-        df_window = features.compute_lagged_rolling_volatility(df_window, horizon_seconds=time_res, alpha=alpha, k=k)
-        df_window = features.compute_multi_window_rolling_vol(df_window, horizon_seconds=time_res)
-        df_window = features.compute_volatility_slope(df_window, horizon_seconds=time_res)
-        df_window = features.compute_volatility_zscore(df_window, horizon_seconds=time_res)
+        df_window = features.compute_rolling_volatility(df_window, horizon_seconds=horizon_seconds, k=k)
+        df_window = features.compute_lagged_rolling_volatility(df_window, horizon_seconds=horizon_seconds, alpha=alpha, k=k)
+        df_window = features.compute_multi_window_rolling_vol(df_window, horizon_seconds=horizon_seconds)
+        df_window = features.compute_volatility_slope(df_window, horizon_seconds=horizon_seconds)
+        df_window = features.compute_volatility_zscore(df_window, horizon_seconds=horizon_seconds)
         df_window = features.compute_volatility_acceleration(df_window)
-        df_window = features.compute_future_rolling_volatility(df_window, horizon_seconds=time_res)
+        df_window = features.compute_future_rolling_volatility(df_window, horizon_seconds=horizon_seconds)
 
         # Extract the features for the latest row in the same order as the model expects
         feature_cols = [c for c in df_window.columns if c.startswith('rolling_vol')] + \
