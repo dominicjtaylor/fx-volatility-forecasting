@@ -15,6 +15,9 @@ import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
+# Use custom style
+plt.style.use('../styles/science.mplstyle')
+
 # Ensure dark/light theme for plotting
 from matplotlib import rcParams
 
@@ -103,6 +106,7 @@ class VolatilityApp(QWidget):
 
         # ---------------- Plot ----------------
         self.fig, self.ax = plt.subplots(figsize=(12, 4))
+        self.ax.set_visible(False)  # hide axes initially
         self.canvas = FigureCanvas(self.fig)
         layout.addWidget(self.canvas)
 
@@ -144,7 +148,7 @@ class VolatilityApp(QWidget):
         df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)
         df = features.compute_volatility_zscore(df, horizon_seconds=horizon_seconds)
         df = features.compute_volatility_acceleration(df)
-        df = features.compute_future_rolling_volatility(df, horizon=horizon_seconds)
+        df = features.compute_future_rolling_volatility(df, horizon_seconds=horizon_seconds)  # updated
 
         self.feature_cols = [c for c in df.columns if c.startswith('rolling_vol')] + \
                             [c for c in df.columns if c.startswith('tod_')] + \
@@ -173,8 +177,12 @@ class VolatilityApp(QWidget):
 
     # ---------------- Plotting ----------------
     def update_plot(self):
-        if self.preds is None:
+        if self.preds is None or len(self.df_clean) == 0:
             return
+
+        # Show axes if hidden
+        if not self.ax.get_visible():
+            self.ax.set_visible(True)
 
         # Time window
         minutes = self.time_slider.value()
@@ -216,7 +224,7 @@ class VolatilityApp(QWidget):
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
-        self.ax.legend()
+        self.ax.legend(loc='lower left')  # fixed legend location
         self.fig.tight_layout()
         self.canvas.draw()
 
