@@ -136,7 +136,7 @@ def evaluate_model(model,X_test,y_test_log,eps=1e-8):
 
 #     return X_future, t_future
 
-def simulate_future_features_autoregressive(df, timestamps, model, horizon_seconds, k=8, alpha=1.0):
+def simulate_future_features_autoregressive(df, timestamps, model, horizon_seconds, k, alpha):
     """
     Generate future feature vectors over a given horizon using a weighted autoregressive simulation.
 
