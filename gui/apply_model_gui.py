@@ -173,7 +173,7 @@ class VolatilityApp(QWidget):
         # self.pred_horizon = self.model.predict(np.repeat(last_features, horizon_seconds, axis=0))
         print('Computed all features. Now simulating future features..')
         timestamps_clean = self.timestamps.iloc[self.df_clean.index]
-        X_future, self.t_horizon = model.simulate_future_features_autoregressive(df=self.df_clean, timestamps=timestamps_clean,
+        X_future, self.t_horizon = model.simulate_future_features_autoregressive(df=df, timestamps=self.df['timestamp'],
                                                                   horizon_seconds=horizon_seconds,k=k,alpha=alpha)
         print('Done simulating future features')
         # self.pred_horizon = self.model.predict(X_future)
