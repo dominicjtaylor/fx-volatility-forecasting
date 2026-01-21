@@ -1,200 +1,224 @@
 #!/usr/bin/env python3
 import sys, os, pickle, re
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QComboBox, QFileDialog, QSlider, QMessageBox
+)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPalette, QColor
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-# Ensure your src is in path
+# Add src to path
 SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = (SCRIPT_DIR / "../src").resolve()
 sys.path.append(str(SRC_DIR))
 
 from volare import data, features, model
 
-# --- Model loading ---
-MODEL_DIR = SCRIPT_DIR / "../results/models"
-model_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("volare_lgb_h") and f.endswith(".pkl")]
-available_horizons = sorted([int(re.search(r"h(\d+)\.pkl", f).group(1)) for f in model_files])
-horizon_to_file = {int(re.search(r"h(\d+)\.pkl", f).group(1)): MODEL_DIR / f for f in model_files}
-
 EPS = 1e-8
 MAX_CANDLES = 300_000
 
-class VolatilityApp(QtWidgets.QMainWindow):
+# --- Locate available models ---
+MODEL_DIR = SCRIPT_DIR / "../results/models"
+model_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("volare_lgb_h") and f.endswith(".pkl")]
+available_horizons = sorted([int(re.search(r"h(\d+)\.pkl", f).group(1)) for f in model_files])
+if not available_horizons:
+    raise RuntimeError(f"No LightGBM models found in {MODEL_DIR}")
+
+horizon_to_file = {int(re.search(r"h(\d+)\.pkl", f).group(1)): MODEL_DIR / f for f in model_files}
+
+# --- Main GUI Class ---
+class VolatilityApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Volatility Forecast Viewer")
+        self.setWindowTitle("Volare LightGBM Volatility Forecast")
         self.resize(1400, 800)
-
         self.df = None
         self.df_clean = None
+        self.timestamps = None
         self.model = None
         self.preds = None
         self.baseline = None
-        self.real_vol = None
-        self.horizon_seconds = available_horizons[0]
+        self.future_vol = None
+        self.forecast_horizon = available_horizons[0]
 
-        self.init_ui()
-        self.show()
+        # Layouts
+        main_layout = QVBoxLayout()
+        controls_layout = QHBoxLayout()
+        main_layout.addLayout(controls_layout)
 
-    def init_ui(self):
-        central_widget = QtWidgets.QWidget()
-        self.setCentralWidget(central_widget)
+        # Horizon selector
+        controls_layout.addWidget(QLabel("Forecast Horizon (s):"))
+        self.horizon_combo = QComboBox()
+        self.horizon_combo.addItems([str(h) for h in available_horizons])
+        self.horizon_combo.setCurrentText(str(self.forecast_horizon))
+        self.horizon_combo.currentTextChanged.connect(self.change_horizon)
+        controls_layout.addWidget(self.horizon_combo)
 
-        layout = QtWidgets.QVBoxLayout(central_widget)
+        # Load CSV button
+        self.load_btn = QPushButton("Load CSV")
+        self.load_btn.clicked.connect(self.load_csv)
+        self.load_btn.setFixedHeight(40)
+        controls_layout.addWidget(self.load_btn)
 
-        # --- Controls ---
-        controls = QtWidgets.QHBoxLayout()
-        layout.addLayout(controls)
+        # Export predictions button
+        self.save_btn = QPushButton("Export Predictions")
+        self.save_btn.clicked.connect(self.save_predictions)
+        self.save_btn.setEnabled(False)
+        self.save_btn.setFixedHeight(40)
+        controls_layout.addWidget(self.save_btn)
 
-        self.load_button = QtWidgets.QPushButton("Load CSV")
-        self.load_button.clicked.connect(self.load_csv)
-        self.load_button.setMinimumHeight(40)
-        controls.addWidget(self.load_button)
-
-        controls.addWidget(QtWidgets.QLabel("Horizon (s):"))
-        self.horizon_dropdown = QtWidgets.QComboBox()
-        self.horizon_dropdown.addItems([str(h) for h in available_horizons])
-        self.horizon_dropdown.setCurrentIndex(0)
-        self.horizon_dropdown.currentTextChanged.connect(self.horizon_changed)
-        self.horizon_dropdown.setMinimumHeight(40)
-        controls.addWidget(self.horizon_dropdown)
-
-        self.export_button = QtWidgets.QPushButton("Export Predictions")
-        self.export_button.clicked.connect(self.export_predictions)
-        self.export_button.setMinimumHeight(40)
-        self.export_button.setEnabled(False)
-        controls.addWidget(self.export_button)
-
-        # Slider for last N minutes/hours
-        self.slider_label = QtWidgets.QLabel("Display last: 60 min")
-        self.slider_label.setMinimumHeight(30)
-        controls.addWidget(self.slider_label)
-
-        self.time_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        # Slider for history length in minutes
+        self.slider_label = QLabel("Display last 60 minutes")
+        main_layout.addWidget(self.slider_label)
+        self.time_slider = QSlider(Qt.Horizontal)
         self.time_slider.setMinimum(1)
-        self.time_slider.setMaximum(360)  # 6 hours max
+        self.time_slider.setMaximum(360)  # 6 hours max by default
         self.time_slider.setValue(60)
         self.time_slider.valueChanged.connect(self.update_plot)
-        controls.addWidget(self.time_slider)
+        main_layout.addWidget(self.time_slider)
 
-        # --- Plot ---
-        self.figure = Figure(figsize=(12,6))
-        self.canvas = FigureCanvas(self.figure)
-        layout.addWidget(self.canvas)
+        # Matplotlib canvas
+        self.fig, self.ax = plt.subplots(figsize=(12, 5))
+        self.canvas = FigureCanvas(self.fig)
+        main_layout.addWidget(self.canvas)
+
+        self.setLayout(main_layout)
+
+        # Dark mode detection
+        palette = QApplication.instance().palette()
+        if palette.color(QPalette.Window).value() < 128:
+            self.dark_mode = True
+            self.fig.patch.set_facecolor("#2e3b4e")
+            self.ax.set_facecolor("#2e3b4e")
+            self.ax.tick_params(colors="white", labelcolor="white")
+            self.ax.yaxis.label.set_color("white")
+            self.ax.xaxis.label.set_color("white")
+            self.ax.title.set_color("white")
+        else:
+            self.dark_mode = False
 
     def load_csv(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select CSV file", "", "CSV Files (*.csv)")
-        if not file_path:
+        path, _ = QFileDialog.getOpenFileName(self, "Select CSV", "", "CSV files (*.csv)")
+        if not path:
             return
-        # Load last MAX_CANDLES candles
-        df_full = data.load_candles(file_path, nrows=MAX_CANDLES)
-        self.df = df_full
+        self.df = data.load_candles(path, nrows=MAX_CANDLES)
+        self.timestamps = self.df["timestamp"]
+
         self.apply_model()
-        self.export_button.setEnabled(True)
 
-    def apply_model(self):
-        # Load model
-        horizon = int(self.horizon_dropdown.currentText())
-        model_file = horizon_to_file[horizon]
-        with open(model_file, "rb") as f:
-            self.model = pickle.load(f)
-
-        df = self.df.copy()
-
-        # --- Feature computation ---
-        k, alpha = 8, 1
-        df = features.compute_log_return(df)
-        df = features.compute_rolling_volatility(df, horizon_seconds=horizon, k=k)
-        df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon, alpha=alpha, k=k)
-        df = features.compute_multi_window_rolling_vol(df, horizon_seconds=horizon)
-        df = features.compute_intraday_seasonality(df)
-        df = features.compute_volatility_slope(df, horizon_seconds=horizon)
-        df = features.compute_volatility_zscore(df, horizon_seconds=horizon)
-        df = features.compute_volatility_acceleration(df)
-
-        feature_cols = [c for c in df.columns if c.startswith("rolling_vol")] + \
-                       [c for c in df.columns if c.startswith("tod_")] + \
-                       [c for c in df.columns if c in ["vol_of_vol","vol_slope","vol_zscore","vol_accel"]]
-        self.df_clean = df[feature_cols].dropna()
-        X = self.df_clean.values
-
-        # Predictions
-        self.preds = self.model.predict(X)
-        rolling_cols = [c for c in feature_cols if "rolling_vol_" in c and "cand" in c]
-        mid = rolling_cols[len(rolling_cols)//2]
-
-        # Medium-window baseline
-        self.baseline = np.log(df.loc[self.df_clean.index, mid].values + EPS)
-        # Realised volatility (actual)
-        self.real_vol = np.log(df.loc[self.df_clean.index, "vol"].values + EPS)
-
-        # Timestamp series
-        self.timestamps = df.loc[self.df_clean.index, "timestamp"]
-
-        self.update_plot()
-
-    def horizon_changed(self):
+    def change_horizon(self, text):
+        self.forecast_horizon = int(text)
         if self.df is not None:
             self.apply_model()
 
+    def apply_model(self):
+        try:
+            # Load model
+            model_file = horizon_to_file[self.forecast_horizon]
+            with open(model_file, "rb") as f:
+                self.model = pickle.load(f)
+
+            # Compute features
+            k, alpha = 8, 1
+            df = self.df.copy()
+            df = features.compute_log_return(df)
+            df = features.compute_rolling_volatility(df, horizon_seconds=self.forecast_horizon, k=k)
+            df = features.compute_lagged_rolling_volatility(df, horizon_seconds=self.forecast_horizon, alpha=alpha, k=k)
+            df = features.compute_multi_window_rolling_vol(df, horizon_seconds=self.forecast_horizon)
+            df = features.compute_intraday_seasonality(df)
+            df = features.compute_volatility_slope(df, horizon_seconds=self.forecast_horizon)
+            df = features.compute_volatility_zscore(df, horizon_seconds=self.forecast_horizon)
+            df = features.compute_volatility_acceleration(df)
+            df = features.compute_future_rolling_volatility(df, horizon=self.forecast_horizon)
+
+            # Feature selection
+            feature_cols = [c for c in df.columns if c.startswith("rolling_vol")] + \
+                           [c for c in df.columns if c.startswith("tod_")] + \
+                           [c for c in df.columns if c in ["vol_of_vol", "vol_slope", "vol_zscore", "vol_accel"]]
+            self.df_clean = df[feature_cols].dropna()
+            X = self.df_clean[feature_cols]
+
+            # Predictions
+            self.preds = self.model.predict(X)
+
+            # Medium-window baseline
+            rolling_cols = [c for c in feature_cols if "rolling_vol_" in c and "cand" in c]
+            mid = rolling_cols[len(rolling_cols)//2]
+            self.baseline = np.log(X[:, feature_cols.index(mid)] + EPS)
+
+            # Future rolling volatility
+            self.future_vol = np.log(df.loc[self.df_clean.index, "rolling_future_vol"].values + EPS)
+
+            self.save_btn.setEnabled(True)
+            self.update_plot()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to apply model:\n{e}")
+
     def update_plot(self):
         if self.preds is None:
+            self.ax.clear()
+            self.canvas.draw()
             return
 
+        # Determine history window
         minutes = self.time_slider.value()
-        self.slider_label.setText(f"Display last: {minutes} min")
+        if minutes > 60:
+            display_time = f"{minutes/60:.1f} hours"
+        else:
+            display_time = f"{minutes} minutes"
+        self.slider_label.setText(f"Display last {display_time}")
         seconds = minutes * 60
 
-        t_end = self.timestamps.iloc[-1]
+        timestamps = pd.to_datetime(self.timestamps.loc[self.df_clean.index])
+        t_end = timestamps.iloc[-1]
         t_start = t_end - pd.Timedelta(seconds=seconds)
-        mask = (self.timestamps >= t_start) & (self.timestamps <= t_end)
 
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+        mask = (timestamps >= t_start) & (timestamps <= t_end)
 
-        ax.plot(self.timestamps[mask], self.real_vol[mask], label="Actual Volatility", color="orange")
-        ax.plot(self.timestamps[mask], self.preds[mask], label="Model Prediction", color="steelblue")
-        ax.plot(self.timestamps[mask], self.baseline[mask], label="Medium-window Baseline", color="green", linestyle="--")
+        self.ax.clear()
+        self.ax.plot(timestamps[mask], self.baseline[mask], label="Medium-window Baseline", color="orange")
+        self.ax.plot(timestamps[mask], self.preds[mask], label="Model Prediction", color="steelblue")
 
-        # Horizon shading
-        horizon_sec = int(self.horizon_dropdown.currentText())
-        t_horizon_start = t_end
-        t_horizon_end = t_end + pd.Timedelta(seconds=horizon_sec)
-        ax.axvspan(t_horizon_start, t_horizon_end, color="gray", alpha=0.3, label="Prediction Horizon")
+        # Horizon region
+        horizon_start = timestamps.iloc[-1]
+        horizon_end = horizon_start + pd.Timedelta(seconds=self.forecast_horizon)
+        self.ax.axvspan(horizon_start, horizon_end, color="grey", alpha=0.2, label="Forecast Horizon")
 
-        ax.set_xlabel("Timestamp")
-        ax.set_ylabel("Log Volatility")
-        ax.legend()
-        ax.grid(alpha=0.3)
-        self.figure.autofmt_xdate()
+        # Future rolling volatility in horizon
+        horizon_mask = timestamps >= horizon_start
+        self.ax.plot(timestamps[horizon_mask], self.future_vol[horizon_mask], label="Future Rolling Volatility", color="green", linestyle="--")
+
+        self.ax.set_xlabel("Time")
+        self.ax.set_ylabel("Log Volatility")
+        self.ax.legend()
+        self.ax.grid(alpha=0.3)
+        self.fig.tight_layout()
         self.canvas.draw()
 
-    def export_predictions(self):
-        if self.preds is None:
-            QMessageBox.warning(self, "Warning", "No predictions to save yet.")
+    def save_predictions(self):
+        path, _ = QFileDialog.getSaveFileName(self, "Save predictions", "", "CSV files (*.csv)")
+        if not path:
             return
+        df_save = pd.DataFrame({
+            "timestamp": self.timestamps.loc[self.df_clean.index],
+            "baseline": self.baseline,
+            "prediction": self.preds,
+            "future_vol": self.future_vol
+        })
+        df_save.to_csv(path, index=False)
+        QMessageBox.information(self, "Saved", f"Predictions saved to {path}")
 
-        save_path, _ = QFileDialog.getSaveFileName(self, "Save Predictions", "", "CSV Files (*.csv)")
-        if save_path:
-            df_out = pd.DataFrame({
-                "timestamp": self.timestamps,
-                "actual_vol": self.real_vol,
-                "baseline": self.baseline,
-                "prediction": self.preds
-            })
-            df_out.to_csv(save_path, index=False)
-            QMessageBox.information(self, "Saved", f"Predictions saved to {save_path}")
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    ex = VolatilityApp()
+    app = QApplication(sys.argv)
+    window = VolatilityApp()
+    window.show()
     sys.exit(app.exec_())
