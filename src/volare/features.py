@@ -238,20 +238,27 @@ def compute_future_rolling_volatility(df, horizon_seconds=2*60, eps=1e-8):
     df = df.copy()
 
     print('Computing future rolling volatility..')
+    print('Time res')
     time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
+    print('H')
     H = int(horizon_seconds/time_res)
 
+    print('r')
     r = np.log(df['close'].values[1:] / df['close'].values[:-1])
     # lr = np.log(df['close'] / df['close'].shift(1))
 
     r2 = r**2
 
+    print('csum')
     csum = np.cumsum(np.insert(r2,0,0))
+    print('rms')
     rms = np.sqrt((csum[H:] - csum[:-H]) / H)
 
     df['rolling_future_vol'] = np.nan
+    print('Add column')
     df.iloc[:len(rms), df.columns.get_loc('rolling_future_vol')] = rms
 
+    print('Add log column')
     df['rolling_log_future_vol'] = np.log(df['rolling_future_vol'] + eps)
 
     return df
