@@ -177,7 +177,16 @@ def simulate_future_features_autoregressive(
 
     for h, ts in enumerate(t_future):
         # --- Horizon-dependent weight ---
-        w = min(1.0, h / blend_steps)
+        anchor_steps = 2          # fully historical
+        transition_steps = 3 * k  # slow transition
+
+        if h < anchor_steps:
+            w = 0.0
+        elif h < anchor_steps + transition_steps:
+            x = (h - anchor_steps) / transition_steps
+            w = x**2              # convex ramp (very important)
+        else:
+            w = 1.0
 
         # --- Compute historical rolling features (unchanged) ---
         df_hist = history_window.copy()
@@ -212,7 +221,14 @@ def simulate_future_features_autoregressive(
         pred_vol = model.predict(X_hist)[0]
 
         # --- Weighted injection (core fix) ---
-        injected_vol = (1 - w) * prev_pred_vol + w * pred_vol
+        #Enforce market microstructure realism to per-step volatility change
+        max_step_change = 0.1 * prev_pred_vol  # 10% per step
+        raw_injected = (1 - w) * prev_pred_vol + w * pred_vol
+        injected_vol = np.clip(
+            raw_injected,
+            prev_pred_vol - max_step_change,
+            prev_pred_vol + max_step_change
+        )
 
         # --- Create synthetic next row (minimal) ---
         new_row = history_window.iloc[[-1]].copy()
