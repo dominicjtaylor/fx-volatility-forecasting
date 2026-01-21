@@ -216,7 +216,7 @@ class VolatilityApp(QWidget):
         # Plot
         self.ax.plot(t_display, actual_display, label="Actual Volatility", color='green')
         self.ax.plot(t_display, preds_display, label="Model Prediction", color='steelblue')
-        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color='orange')
+        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color='orange',ls='--')
         self.ax.plot(t_horizon, self.pred_horizon, label="Prediction Horizon", color='steelblue', linestyle='dashed')
 
         # Shaded horizon
