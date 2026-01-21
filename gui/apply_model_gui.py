@@ -176,7 +176,10 @@ class VolatilityApp(QWidget):
         X_future, self.t_horizon = model.simulate_future_features(df=self.df_clean, timestamps=timestamps_clean,
                                                                   horizon_seconds=horizon_seconds,k=k,alpha=alpha)
         print('Done simulating future features')
-        self.pred_horizon = self.model.predict(X_future)
+        # self.pred_horizon = self.model.predict(X_future)
+        pred_future = self.model.predict(X_future)
+        pred_future += self.preds[-1] - pred_future[0]
+        self.pred_horizon = pred_future
 
         self.export_btn.setEnabled(True)
         self.update_plot()
