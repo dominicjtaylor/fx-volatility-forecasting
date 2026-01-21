@@ -238,7 +238,7 @@ class VolatilityApp(QWidget):
         self.ax.plot(self.t_horizon, self.pred_horizon, label="Prediction Horizon", color=model_color, alpha=model_alpha, ls='--')
 
         # Shaded horizon
-        self.ax.axvspan(t_horizon[0], t_horizon[-1], color=horizon_color, alpha=0.2, label='Forecast Horizon')
+        self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color=horizon_color, alpha=0.2, label='Forecast Horizon')
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
