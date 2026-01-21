@@ -166,7 +166,7 @@ class VolatilityApp(QWidget):
         self.medium_baseline = np.log(X[:, mid_idx] + EPS)
 
         # Actual volatility (medium rolling window)
-        self.actual_vol = np.log(df.loc[self.df_clean.index, rolling_cols[len(rolling_cols)//2]].values + EPS)
+        self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
 
         # Prediction over horizon (using last X as input)
         last_features = X[-1].reshape(1, -1)
