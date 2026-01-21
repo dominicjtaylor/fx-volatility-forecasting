@@ -144,14 +144,15 @@ class VolatilityApp(QWidget):
                            [c for c in df.columns if c in ["vol_of_vol", "vol_slope", "vol_zscore", "vol_accel"]]
             self.df_clean = df[feature_cols].dropna()
             X = self.df_clean[feature_cols]
+            X_array = X.values
 
             # Predictions
-            self.preds = self.model.predict(X)
+            self.preds = self.model.predict(X_array)
 
             # Medium-window baseline
             rolling_cols = [c for c in feature_cols if "rolling_vol_" in c and "cand" in c]
             mid = rolling_cols[len(rolling_cols)//2]
-            self.baseline = np.log(X[:, feature_cols.index(mid)] + EPS)
+            self.baseline = np.log(X_array[:, feature_cols.index(mid)] + EPS)
 
             # Future rolling volatility
             self.future_vol = np.log(df.loc[self.df_clean.index, "rolling_future_vol"].values + EPS)
