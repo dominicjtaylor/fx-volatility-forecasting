@@ -139,7 +139,7 @@ class VolatilityApp(QWidget):
                             [c for c in df.columns if c.startswith('tod_')] + \
                             [c for c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
 
-        self.df_clean = df[self.feature_cols].dropna()
+        self.df_clean = df[self.feature_cols].dropna().reset_index(drop=True)
         X = self.df_clean.values
         self.preds = self.model.predict(X)
 
@@ -177,10 +177,6 @@ class VolatilityApp(QWidget):
         seconds = minutes * 60
 
         print('Compute time for axes')
-        if self.df_clean.empty:
-            QMessageBox.critical(self, "Error", "No valid data after computing features. Check CSV or horizon.")
-            return
-
         t_end = self.timestamps.iloc[self.df_clean.index[-1]]
         t_start = t_end - pd.Timedelta(seconds=seconds)
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
