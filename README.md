@@ -123,7 +123,7 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 
 ### Performance vs FX Pair
 
-**Figure:** Model performance relative to a medium-window rolling-volatility baseline across multiple FX pairs, trained on the first 500,000 candles using a 60-minute horizon.
+**Figure:** Model performance relative to a medium-window rolling-volatility baseline across multiple FX pairs, trained on the first 1,000,000 candles using a 60-minute horizon.
 
 Bars show **percentage improvement in RMSE and MAE** over the medium-window baseline. The model outperforms the baseline across the board. This highlights which pairs benefit most and how well the model generalizes across FX pairs.
 
