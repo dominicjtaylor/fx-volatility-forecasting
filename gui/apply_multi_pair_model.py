@@ -75,7 +75,7 @@ class VolatilityApp(QWidget):
 
         self.time_slider = QSlider(Qt.Horizontal)
         self.time_slider.setMinimum(1)
-        self.time_slider.setMaximum(360)
+        self.time_slider.setMaximum(720)
         self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.valueChanged.connect(self.update_plot)
         slider_layout.addWidget(self.time_slider)
@@ -200,10 +200,10 @@ class VolatilityApp(QWidget):
         self.ax.xaxis.label.set_color(fg_color)
         self.ax.title.set_color(fg_color)
 
-        self.ax.plot(t_display, actual_display, label="Actual Volatility", color='k', alpha=0.6)
+        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", color='k', alpha=0.6)
         self.ax.plot(t_display, preds_display, label="Model Prediction", color='firebrick', alpha=0.8)
         self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color='steelblue', alpha=0.5)
-        self.ax.plot(self.t_horizon, self.pred_horizon, label="Prediction Horizon", color='firebrick', alpha=0.8, ls='--')
+        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", color='firebrick', alpha=0.8, ls='--')
         self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon')
 
         self.ax.set_xlabel("Time")
