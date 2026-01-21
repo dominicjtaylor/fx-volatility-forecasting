@@ -26,6 +26,8 @@ def load_candles(file,dtype=None,nrows=None):
 
     df = pd.read_csv(file, parse_dates=['timestamp'], dtype=dtype, nrows=nrows)
 
+    df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_convert(None)
+
     return df 
 
 def load_candles_st(file, dtype=None, nrows=None):
