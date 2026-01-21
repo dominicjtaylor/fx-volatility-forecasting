@@ -69,6 +69,54 @@ def compute_rolling_volatility(df, horizon_seconds, k):
 
     return df
 
+def compute_rolling_volatility_future(history_df, pred_vol=None, horizon_seconds=10, k=8, time_res=None):
+    """
+    Compute rolling volatility for autoregressive simulation of future steps.
+    history_df: historical DataFrame containing at least 'rolling_vol' (or 'close') and timestamps.
+    pred_vol: optional previous predicted volatility to inject as the first step.
+    Returns row containing updated features including 'rolling_vol' for the next step.
+    """
+    df = history_df.copy()
+
+    # Infer time resolution if not provided
+    if time_res is None:
+        if len(df) < 2:
+            raise ValueError("Need at least 2 rows to compute time resolution")
+        time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
+
+    window_size = int(np.ceil(k * horizon_seconds / time_res))
+    df_window = df.iloc[-window_size:].copy()
+
+    # Determine the last rolling volatility to use
+    last_vol = df_window['rolling_vol'].iloc[-1] if pred_vol is None else pred_vol
+
+    # Weighted injection: first step uses last historical vol, then gradually include predictions
+    # Here, we can implement simple weighting: first step = last_vol, subsequent steps blend in prediction
+    # For one step, we just return last_vol
+    updated_row = df.iloc[[-1]].copy().iloc[0]  # preserve all columns
+    updated_row['rolling_vol'] = last_vol
+
+    # Add more features if needed, e.g., slope, zscore, vol_of_vol, etc.
+    # These can be recomputed from df_window here if you want
+    # Example: simple slope over the window
+    if 'rolling_vol' in df_window.columns:
+        y = df_window['rolling_vol'].values
+        updated_row['vol_slope'] = (y[-1] - y[0]) / len(y)
+
+        # Vol of vol
+        updated_row['vol_of_vol'] = np.std(y)
+
+        # Optional z-score
+        updated_row['vol_zscore'] = (y[-1] - np.mean(y)) / (np.std(y) + 1e-8)
+
+        # Acceleration
+        if len(y) > 2:
+            updated_row['vol_accel'] = y[-1] - 2*y[-2] + y[-3]
+        else:
+            updated_row['vol_accel'] = 0.0
+
+    return updated_row
+
 def compute_lagged_rolling_volatility(df,horizon_seconds,alpha,k,lag_multipliers=[0.25, 0.5, 1, 2, 4]):
     """
     Compute lagged rolling volatility.
