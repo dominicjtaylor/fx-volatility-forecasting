@@ -176,15 +176,18 @@ class VolatilityApp(QWidget):
         self.slider_label.setText(f"Display last {minutes} min")
         seconds = minutes * 60
 
+        print('Compute time for axes')
         t_end = self.timestamps.iloc[self.df_clean.index[-1]]
         t_start = t_end - pd.Timedelta(seconds=seconds)
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
+        print('Get timestamps')
         t_display = self.timestamps.iloc[self.df_clean.index][mask]
         preds_display = self.preds[mask]
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
 
+        print("Clear axes")
         self.ax.clear()
         bg_color = "#222222" if self.dark_mode else "white"
         fg_color = "white" if self.dark_mode else "black"
