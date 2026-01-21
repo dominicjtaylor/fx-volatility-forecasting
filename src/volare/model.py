@@ -170,7 +170,7 @@ def simulate_future_features_autoregressive(df, timestamps, horizon_seconds, k, 
     num_steps = int(np.ceil(horizon_seconds / time_res))
     
     # Generate future timestamps
-    t_future_start = timestamps.iloc[-1] + pd.Timedelta(seconds=time_res)
+    t_future_start = timestamps.iloc[-1]
     t_future = pd.date_range(start=t_future_start, periods=num_steps, freq=pd.Timedelta(seconds=time_res))
     
     # Determine the historical window to compute rolling features
