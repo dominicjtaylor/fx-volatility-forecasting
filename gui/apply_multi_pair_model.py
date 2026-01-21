@@ -98,29 +98,27 @@ class VolatilityApp(QWidget):
     def load_csv(self, path):
         try:
             # Load last 500_000 rows
-            self.df = data.load_candles(path, nrows=None)
-            self.df = self.df.iloc[-DEFAULT_CANDLES:]
+            self.df = data.load_candles(path, nrows=DEFAULT_CANDLES)
+            # self.df = self.df.iloc[-DEFAULT_CANDLES:]
             self.timestamps = self.df['timestamp']
+            self.apply_model()
 
             # Determine currency pair from filename
             stem = Path(path).stem  # e.g., 'questdb-gbpusd'
             if '-' not in stem:
                 raise ValueError("Cannot parse currency pair from filename")
             currencies = stem.split('-')[1]
-            model_file = Path(MODEL_DIR) / f"volare_lgb_{currencies}_h{HORIZON_SECONDS}.pkl"
+            self.model_file = Path(MODEL_DIR) / f"volare_lgb_{currencies}_h{HORIZON_SECONDS}.pkl"
 
-            if not model_file.exists():
-                raise FileNotFoundError(f"Model file not found: {model_file}")
-
-            with open(model_file, "rb") as f:
-                self.model = pickle.load(f)
-
-            self.apply_model()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load CSV or model:\n{e}")
 
     # ---------------- Model Application ----------------
     def apply_model(self):
+
+        with open(self.model_file, "rb") as f:
+            self.model = pickle.load(f)
+
         horizon_seconds = HORIZON_SECONDS
         k, alpha = 8, 1
 
@@ -177,13 +175,12 @@ class VolatilityApp(QWidget):
         seconds = minutes * 60
 
         print('Compute time for axes')
-        pos_idx = np.searchsorted(self.df.index.values, self.df_clean.index.values)
-        t_end = self.timestamps.iloc[pos_idx[-1]]
+        t_end = self.timestamps.iloc[self.df_clean.index[-1]]
         t_start = t_end - pd.Timedelta(seconds=seconds)
-        mask = (self.timestamps.iloc[pos_idx] >= t_start) & (self.timestamps.iloc[pos_idx] <= t_end)
+        mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
         print('Get timestamps')
-        t_display = self.timestamps.iloc[pos_idx][mask]
+        t_display = self.timestamps.iloc[self.df_clean.index][mask]
         preds_display = self.preds[mask]
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
