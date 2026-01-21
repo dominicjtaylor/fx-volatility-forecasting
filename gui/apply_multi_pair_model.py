@@ -152,9 +152,11 @@ class VolatilityApp(QWidget):
         self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
 
         # Simulate forecast horizon
+        print('Simulating future features')
         X_future, self.t_horizon = model.simulate_future_features_conditional(
             df=df, timestamps=df['timestamp'], horizon_seconds=horizon_seconds
         )
+        print('Done simulating future features')
         pred_future = self.model.predict(X_future)
         pred_future[0] = self.preds[-1]
         self.pred_horizon = pred_future
