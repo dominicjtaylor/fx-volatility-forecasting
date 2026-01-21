@@ -102,7 +102,6 @@ class VolatilityApp(QWidget):
             self.df = data.load_candles(path, nrows=DEFAULT_CANDLES)
             # self.df = self.df.iloc[-DEFAULT_CANDLES:]
             self.timestamps = self.df['timestamp']
-            self.apply_model()
 
             # Determine currency pair from filename
             stem = Path(path).stem  # e.g., 'questdb-gbpusd'
@@ -110,6 +109,8 @@ class VolatilityApp(QWidget):
                 raise ValueError("Cannot parse currency pair from filename")
             currencies = stem.split('-')[1]
             self.model_file = Path(MODEL_DIR) / f"volare_lgb_{currencies}_h{HORIZON_SECONDS}.pkl"
+
+            self.apply_model()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load CSV or model:\n{e}")
