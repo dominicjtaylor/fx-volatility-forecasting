@@ -76,7 +76,7 @@ def evaluate_model(model,X_test,y_test_log,eps=1e-8):
 
     return y_pred_log, y_pred_vol, rmse_log, mae_log
 
-def simulate_future_features(df, horizon_seconds, k=8, alpha=1):
+def simulate_future_features(df, timestamps, horizon_seconds, k=8, alpha=1):
     """
     Generate future feature vectors over a given horizon in seconds,
     at the same time resolution as the historical data.
@@ -105,7 +105,7 @@ def simulate_future_features(df, horizon_seconds, k=8, alpha=1):
 
     # Compute time resolution from historical data
     print('Compute time res')
-    time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
+    time_res = (timestamps_clean.iloc[1] - timestamps_clean.iloc[0]).total_seconds()
 
     # Determine number of prediction steps
     num_steps = int(np.ceil(horizon_seconds / time_res))
