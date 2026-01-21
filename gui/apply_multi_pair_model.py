@@ -150,7 +150,8 @@ class VolatilityApp(QWidget):
         self.medium_baseline = np.log(X[:, mid_idx] + EPS)
 
         # Actual volatility
-        self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
+        # self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
+        self.actual_vol = df.loc[self.df_clean.index, 'rolling_log_future_vol'].values
 
         # Simulate forecast horizon
         print('Simulating future features')
