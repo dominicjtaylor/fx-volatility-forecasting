@@ -179,8 +179,7 @@ class VolatilityApp(QWidget):
         # self.pred_horizon = self.model.predict(X_future)
         pred_future = self.model.predict(X_future)
         print(self.t_horizon,pred_future)
-        offset = self.preds[-1] - pred_future[0]
-        pred_future[0] += offset
+        pred_future[0] = self.preds[-1]
         self.pred_horizon = pred_future
 
         self.export_btn.setEnabled(True)
