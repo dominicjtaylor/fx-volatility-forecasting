@@ -136,7 +136,7 @@ class VolatilityApp(QWidget):
             df = features.compute_volatility_slope(df, horizon_seconds=self.forecast_horizon)
             df = features.compute_volatility_zscore(df, horizon_seconds=self.forecast_horizon)
             df = features.compute_volatility_acceleration(df)
-            df = features.compute_future_rolling_volatility(df, horizon=self.forecast_horizon)
+            df = features.compute_future_rolling_volatility(df, horizon_seconds=self.forecast_horizon)
 
             # Feature selection
             feature_cols = [c for c in df.columns if c.startswith("rolling_vol")] + \
