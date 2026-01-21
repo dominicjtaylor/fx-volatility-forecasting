@@ -47,6 +47,7 @@ class VolatilityApp(QWidget):
         self.medium_baseline = None
         self.actual_vol = None
         self.t_horizon = None
+        self.model_file = None
 
         self.dark_mode = self.is_dark_mode()
         self.init_ui()
