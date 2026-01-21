@@ -27,7 +27,7 @@ MODEL_DIR = SCRIPT_DIR / "../results/models"
 EPS = 1e-8
 HORIZON_SECONDS = 60 * 60  # Fixed 60-min horizon
 DEFAULT_CANDLES = 1_000_000
-DEFAULT_DISPLAY_MINUTES = 60
+DEFAULT_DISPLAY_MINUTES = 720
 
 # ------------------------------
 # GUI Class
@@ -75,7 +75,7 @@ class VolatilityApp(QWidget):
 
         self.time_slider = QSlider(Qt.Horizontal)
         self.time_slider.setMinimum(1)
-        self.time_slider.setMaximum(720)
+        self.time_slider.setMaximum(1440)
         self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.valueChanged.connect(self.update_plot)
         slider_layout.addWidget(self.time_slider)

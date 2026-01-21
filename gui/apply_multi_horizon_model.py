@@ -166,7 +166,8 @@ class VolatilityApp(QWidget):
         self.medium_baseline = np.log(X[:, mid_idx] + EPS)
 
         # Actual volatility (medium rolling window)
-        self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
+        # self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
+        self.actual_vol = df.loc[self.df_clean.index, 'rolling_log_future_vol'].values
 
         # Prediction over horizon (using last X as input)
         # last_features = X[-1].reshape(1, -1)
@@ -235,10 +236,10 @@ class VolatilityApp(QWidget):
         baseline_alpha = 0.5
 
         # Plot
-        self.ax.plot(t_display, actual_display, label="Actual Volatility", color=actual_color, alpha=actual_alpha)
+        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", color=actual_color, alpha=actual_alpha)
         self.ax.plot(t_display, preds_display, label="Model Prediction", color=model_color, alpha=model_alpha)
         self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color=baseline_color, alpha=baseline_alpha)
-        self.ax.plot(self.t_horizon, self.pred_horizon, label="Prediction Horizon", color=model_color, alpha=model_alpha, ls='--')
+        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecat", color=model_color, alpha=model_alpha, ls='--')
 
         # Shaded horizon
         self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color=horizon_color, alpha=0.2, label='Forecast Horizon')
