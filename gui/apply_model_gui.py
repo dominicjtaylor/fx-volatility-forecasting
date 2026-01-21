@@ -188,6 +188,8 @@ class VolatilityGUI(QMainWindow):
             df.loc[self.df_clean.index, mid].values + EPS
         )
 
+        self.ts_feat = pd.to_datetime(df.loc[self.df_clean.index, "timestamp"])
+
         self.baseline = self.realised_vol.copy()
 
     # -----------------------------------------------------------------
@@ -200,7 +202,8 @@ class VolatilityGUI(QMainWindow):
 
         seconds = minutes * 60
 
-        t_all = self.timestamps.iloc[self.df_clean.index]
+        # t_all = self.timestamps.iloc[self.df_clean.index]
+        t_all = self.ts_feat
         t_end = t_all.iloc[-1]
         t_start = t_end - pd.Timedelta(seconds=seconds)
 
@@ -215,6 +218,8 @@ class VolatilityGUI(QMainWindow):
         # Clear old canvas
         for i in reversed(range(self.plot_container.count())):
             self.plot_container.itemAt(i).widget().setParent(None)
+
+        assert len(t_all) == len(self.realised_vol) == len(self.preds)
 
         fig, ax = plt.subplots(figsize=(12, 4))
 
