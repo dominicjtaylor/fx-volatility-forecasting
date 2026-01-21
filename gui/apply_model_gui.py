@@ -169,8 +169,11 @@ class VolatilityApp(QWidget):
         self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
 
         # Prediction over horizon (using last X as input)
-        last_features = X[-1].reshape(1, -1)
-        self.pred_horizon = self.model.predict(np.repeat(last_features, horizon_seconds, axis=0))
+        # last_features = X[-1].reshape(1, -1)
+        # self.pred_horizon = self.model.predict(np.repeat(last_features, horizon_seconds, axis=0))
+
+        X_future, self.t_horizon = model.simulate_future_features(df=self.df_clean, horizon_seconds=horizon_seconds)
+        self.pred_horizon = self.model.predict(X_future)
 
         self.export_btn.setEnabled(True)
         self.update_plot()
@@ -213,14 +216,22 @@ class VolatilityApp(QWidget):
         self.ax.xaxis.label.set_color(fg_color)
         self.ax.title.set_color(fg_color)
 
+        actual_color = 'k'
+        model_color = 'firebrick'
+        baseline_color = 'steelblue'
+        horizon_color = 'orange'
+        actual_alpha = 0.6
+        model_alpha = 0.8
+        baseline_alpha = 0.5
+
         # Plot
-        self.ax.plot(t_display, actual_display, label="Actual Volatility", color='green')
-        self.ax.plot(t_display, preds_display, label="Model Prediction", color='steelblue')
-        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color='orange',ls='--')
-        self.ax.plot(t_horizon, self.pred_horizon, label="Prediction Horizon", color='steelblue', linestyle='dashed')
+        self.ax.plot(t_display, actual_display, label="Actual Volatility", color=actual_color, alpha=actual_alpha)
+        self.ax.plot(t_display, preds_display, label="Model Prediction", color=model_color, alpha=model_alpha)
+        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color=baseline_color, alpha=baseline_alpha)
+        self.ax.plot(self.t_horizon, self.pred_horizon, label="Prediction Horizon", color=model_color, alpha=model_alpha, ls='--')
 
         # Shaded horizon
-        self.ax.axvspan(t_horizon[0], t_horizon[-1], color='grey', alpha=0.2)
+        self.ax.axvspan(t_horizon[0], t_horizon[-1], color=horizon_color, alpha=0.2, label='Forecast Horizon')
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
