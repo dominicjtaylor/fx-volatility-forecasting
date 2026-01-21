@@ -60,6 +60,7 @@ def compute_rolling_volatility(df, horizon_seconds, k):
 
     print('Computing past rolling volatility..')
     time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
+    print(window_seconds,time_res)
     window_candles = int(window_seconds / time_res)
 
     df['rolling_vol'] = np.sqrt(
