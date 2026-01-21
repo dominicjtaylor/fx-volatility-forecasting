@@ -122,6 +122,7 @@ class VolatilityApp(QWidget):
     def load_csv(self, path):
         try:
             self.df = data.load_candles(path, nrows=DEFAULT_CANDLES)
+            print(self.df.columns)
             self.timestamps = self.df['timestamp']
             self.apply_model()
         except Exception as e:
