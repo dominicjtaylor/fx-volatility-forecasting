@@ -122,6 +122,14 @@ class VolatilityApp(QWidget):
     def load_csv(self, path):
         try:
             self.df = data.load_candles(path, nrows=DEFAULT_CANDLES)
+            # Debugging outputs
+            print("Columns returned by load_candles:", self.df.columns.tolist())
+            print("First few rows:\n", self.df.head())
+            print("Data types:\n", self.df.dtypes)
+
+            if 'timestamp' not in self.df.columns:
+                raise KeyError("'timestamp' column not found in DataFrame returned by load_candles!")
+
             self.timestamps = self.df['timestamp']
             self.apply_model()
         except Exception as e:
