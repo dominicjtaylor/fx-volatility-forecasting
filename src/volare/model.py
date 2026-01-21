@@ -136,86 +136,127 @@ def evaluate_model(model,X_test,y_test_log,eps=1e-8):
 
 #     return X_future, t_future
 
-def simulate_future_features_autoregressive(df, timestamps, model, horizon_seconds, k, alpha):
+def simulate_future_features_autoregressive(
+    df,
+    timestamps,
+    model,
+    horizon_seconds,
+    k,
+    alpha,
+):
     """
-    Generate future feature vectors over a given horizon using a weighted autoregressive simulation.
-
-    Each future step recomputes rolling features using a historical window,
-    and the first step is anchored to the last known model prediction.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Historical DataFrame with all computed features and a 'timestamp' column.
-        Must have at least k*horizon_seconds rows to compute rolling features.
-    timestamps : pd.Series
-        Historical timestamps corresponding to df.
-    model : object
-        Trained ML model with a .predict() method.
-    horizon_seconds : int
-        Total seconds to forecast into the future.
-    k : int
-        Window multiplier for rolling features (window = k * horizon_seconds).
-    alpha : float
-        Parameter for lagged rolling volatility.
-
-    Returns
-    -------
-    X_future : np.ndarray
-        Array of shape (num_steps, n_features) with simulated future features.
-    t_future : pd.DatetimeIndex
-        Future timestamps corresponding to each row in X_future.
+    Autoregressive future feature simulation with horizon-dependent
+    weighting between historical and model-predicted volatility.
     """
+
     if df.empty or len(df) < 2:
         raise ValueError("Input df must have at least 2 rows")
 
-    # Determine time resolution
+    # --- Time resolution ---
     time_res = (timestamps.iloc[1] - timestamps.iloc[0]).total_seconds()
     num_steps = int(np.ceil(horizon_seconds / time_res))
 
-    # Generate future timestamps
-    t_future_start = timestamps.iloc[-1]
-    t_future = pd.date_range(start=t_future_start, periods=num_steps, freq=pd.Timedelta(seconds=time_res))
+    # Horizon timestamps (start exactly at last observed time)
+    t_future = pd.date_range(
+        start=timestamps.iloc[-1],
+        periods=num_steps + 1,
+        freq=pd.Timedelta(seconds=time_res),
+    )[1:]
 
-    # Historical window for feature computation
+    # Rolling window size in rows
     window_size = int(np.ceil(k * horizon_seconds / time_res))
+
+    # History window (pure historical data)
     history_window = df.iloc[-window_size:].copy().reset_index(drop=True)
 
     future_features = []
-    last_pred = history_window['rolling_vol'].iloc[-1]  # anchor first step
+    prev_pred_vol = history_window.iloc[-1]["rolling_vol"]
 
-    for ts in t_future:
-        # Compute next row features using weighted autoregressive rolling volatility
-        new_row = features.compute_rolling_volatility_future(
-            history_window,
-            pred_vol=last_pred,
-            horizon_seconds=horizon_seconds,
-            k=k,
-            time_res=time_res
+    # Number of steps over which we blend history → model
+    blend_steps = k
+
+    for h, ts in enumerate(t_future):
+        # --- Horizon-dependent weight ---
+        w = min(1.0, h / blend_steps)
+
+        # --- Compute historical rolling features (unchanged) ---
+        df_hist = history_window.copy()
+        df_hist = features.compute_rolling_volatility(
+            df_hist, horizon_seconds=horizon_seconds, k=k
+        )
+        df_hist = features.compute_lagged_rolling_volatility(
+            df_hist, horizon_seconds=horizon_seconds, alpha=alpha, k=k
+        )
+        df_hist = features.compute_multi_window_rolling_vol(
+            df_hist, horizon_seconds=horizon_seconds
+        )
+        df_hist = features.compute_volatility_slope(
+            df_hist, horizon_seconds=horizon_seconds
+        )
+        df_hist = features.compute_volatility_zscore(
+            df_hist, horizon_seconds=horizon_seconds
+        )
+        df_hist = features.compute_volatility_acceleration(df_hist)
+        df_hist = features.compute_future_rolling_volatility(
+            df_hist, horizon_seconds=horizon_seconds
         )
 
-        # Update timestamp and time-of-day features
-        new_row['timestamp'] = ts
-        new_row['tod_sin'] = np.sin(2 * np.pi * ts.hour / 24 + 2 * np.pi * ts.minute / 1440)
-        new_row['tod_cos'] = np.cos(2 * np.pi * ts.hour / 24 + 2 * np.pi * ts.minute / 1440)
+        # --- Extract last historical feature vector ---
+        feature_cols = (
+            [c for c in df_hist.columns if c.startswith("rolling_vol")]
+            + [c for c in df_hist.columns if c.startswith("tod_")]
+            + [c for c in df_hist.columns if c in ["vol_of_vol", "vol_slope", "vol_zscore", "vol_accel"]]
+        )
 
-        # Predict next volatility
-        feature_cols = [c for c in new_row.index if c.startswith('rolling_vol')] + \
-                       [c for c in new_row.index if c.startswith('tod_')] + \
-                       [c for c in new_row.index if c in ['vol_of_vol', 'vol_slope', 'vol_zscore', 'vol_accel']]
-        X_step = new_row[feature_cols].values.reshape(1, -1)
-        pred_next = model.predict(X_step)[0]
+        X_hist = df_hist.iloc[[-1]][feature_cols].values
+        pred_vol = model.predict(X_hist)[0]
 
-        # Inject predicted volatility for next iteration
-        last_pred = pred_next
-        new_row['rolling_vol'] = pred_next
+        # --- Weighted injection (core fix) ---
+        injected_vol = (1 - w) * prev_pred_vol + w * pred_vol
 
-        # Append to history window and trim
-        history_window = pd.concat([history_window, new_row.to_frame().T], ignore_index=True)
-        history_window = history_window.iloc[-window_size:].copy().reset_index(drop=True)
+        # --- Create synthetic next row (minimal) ---
+        new_row = history_window.iloc[[-1]].copy()
+        new_row["timestamp"] = ts
+        new_row["rolling_vol"] = injected_vol
 
-        # Store features for horizon prediction
-        future_features.append(new_row[feature_cols].values)
+        # Time-of-day features
+        new_row["tod_sin"] = np.sin(
+            2 * np.pi * (ts.hour * 3600 + ts.minute * 60) / 86400
+        )
+        new_row["tod_cos"] = np.cos(
+            2 * np.pi * (ts.hour * 3600 + ts.minute * 60) / 86400
+        )
+
+        # --- Update history window ---
+        history_window = pd.concat([history_window, new_row], ignore_index=True)
+        history_window = history_window.iloc[-window_size:].reset_index(drop=True)
+
+        # --- Recompute features for the injected row only ---
+        df_sim = history_window.copy()
+        df_sim = features.compute_rolling_volatility(
+            df_sim, horizon_seconds=horizon_seconds, k=k
+        )
+        df_sim = features.compute_lagged_rolling_volatility(
+            df_sim, horizon_seconds=horizon_seconds, alpha=alpha, k=k
+        )
+        df_sim = features.compute_multi_window_rolling_vol(
+            df_sim, horizon_seconds=horizon_seconds
+        )
+        df_sim = features.compute_volatility_slope(
+            df_sim, horizon_seconds=horizon_seconds
+        )
+        df_sim = features.compute_volatility_zscore(
+            df_sim, horizon_seconds=horizon_seconds
+        )
+        df_sim = features.compute_volatility_acceleration(df_sim)
+        df_sim = features.compute_future_rolling_volatility(
+            df_sim, horizon_seconds=horizon_seconds
+        )
+
+        X_step = df_sim.iloc[[-1]][feature_cols].values[0]
+        future_features.append(X_step)
+
+        prev_pred_vol = injected_vol
 
     X_future = np.vstack(future_features)
     return X_future, t_future
