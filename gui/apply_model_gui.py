@@ -178,6 +178,7 @@ class VolatilityApp(QWidget):
         print('Done simulating future features')
         # self.pred_horizon = self.model.predict(X_future)
         pred_future = self.model.predict(X_future)
+        print(self.t_horizon,pred_future)
         offset = self.preds[-1] - pred_future[0]
         pred_future[0] += offset
         self.pred_horizon = pred_future
@@ -209,8 +210,8 @@ class VolatilityApp(QWidget):
         actual_display = self.actual_vol[mask]
 
         # Horizon timestamps
-        t_horizon_start = t_display.iloc[-1] + pd.Timedelta(seconds=1)
-        t_horizon = pd.date_range(t_horizon_start, periods=self.forecast_horizon, freq='S')
+        # t_horizon_start = t_display.iloc[-1]
+        # t_horizon = pd.date_range(t_horizon_start, periods=self.forecast_horizon, freq='S')
 
         # Clear previous plot
         self.ax.clear()
