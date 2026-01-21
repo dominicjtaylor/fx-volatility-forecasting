@@ -105,14 +105,14 @@ def simulate_future_features(df, timestamps, horizon_seconds, k=8, alpha=1):
 
     # Compute time resolution from historical data
     print('Compute time res')
-    time_res = (timestamps_clean.iloc[1] - timestamps_clean.iloc[0]).total_seconds()
+    time_res = (timestamps.iloc[1] - timestamps.iloc[0]).total_seconds()
 
     # Determine number of prediction steps
     num_steps = int(np.ceil(horizon_seconds / time_res))
 
     # Generate future timestamps
     print('Generate future timestamps')
-    t_future_start = df['timestamp'].iloc[-1] + pd.Timedelta(seconds=time_res)
+    t_future_start = timestamps.iloc[-1] + pd.Timedelta(seconds=time_res)
     t_future = pd.date_range(start=t_future_start, periods=num_steps, freq=pd.Timedelta(seconds=time_res))
 
     # Start simulation from the last row
