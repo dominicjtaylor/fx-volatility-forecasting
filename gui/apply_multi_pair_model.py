@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys, os, pickle, re
 from pathlib import Path
-
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 import pandas as pd
 import numpy as np
 
@@ -122,6 +122,11 @@ class VolatilityApp(QWidget):
         slider_layout.addWidget(self.time_slider)
         layout.addLayout(slider_layout)
 
+        self.rmse_label = QLabel("RMSE improvement: N/A")
+        self.mae_label  = QLabel("MAE improvement: N/A")
+        layout.addWidget(self.rmse_label)
+        layout.addWidget(self.mae_label)
+
         # ---------------- Plot ----------------
         self.fig, self.ax = plt.subplots(figsize=(12, 4))
         # self.ax.set_visible(False)
@@ -233,6 +238,21 @@ class VolatilityApp(QWidget):
         preds_display = self.preds[mask]
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
+
+        if len(actual_display) > 0:
+            rmse_model = np.sqrt(mean_squared_error(actual_display, preds_display))
+            mae_model  = mean_absolute_error(actual_display, preds_display)
+            rmse_base  = np.sqrt(mean_squared_error(actual_display, baseline_display))
+            mae_base   = mean_absolute_error(actual_display, baseline_display)
+
+            rmse_improve = 100 * (rmse_base - rmse_model) / rmse_base
+            mae_improve  = 100 * (mae_base - mae_model) / mae_base
+
+            self.rmse_label.setText(f"RMSE improvement vs medium: {rmse_improve:.2f}%")
+            self.mae_label.setText(f"MAE improvement vs medium: {mae_improve:.2f}%")
+        else:
+            self.rmse_label.setText("RMSE improvement: N/A")
+            self.mae_label.setText("MAE improvement: N/A")
 
         print("Clear axes")
         self.ax.clear()
