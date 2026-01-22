@@ -59,7 +59,7 @@ def retrain_model(X_train,y_train,model):
     model_refit = LGBMRegressor(**model.get_params())
     model_refit.n_estimators = model.best_iteration_
     model_refit.fit(X_train,y_train)
-    return model
+    return model_refit
 
 def evaluate_model(model,X_test,y_test_log,eps=1e-8):
     """

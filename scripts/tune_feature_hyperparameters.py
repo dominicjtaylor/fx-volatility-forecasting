@@ -69,7 +69,6 @@ def evaluate_features(df, horizon_seconds, window_factors, window_scales, lag_sc
 
 # ---------------- Single pair training (unchanged) ----------------
 def train_single_pair(df, horizon_seconds, window_scale=0.75, window_factor=8, lag_scale=1):
-    print('\nComputing features..')
     df = features.compute_log_return(df)
     df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds,
                                              window_scale=window_scale, window_factor=window_factor)
@@ -80,11 +79,8 @@ def train_single_pair(df, horizon_seconds, window_scale=0.75, window_factor=8, l
     df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)
     df = features.compute_volatility_zscore(df, horizon_seconds=horizon_seconds)
     df = features.compute_volatility_acceleration(df)
-    print('Finished computing features!\n')
 
-    print('Computing target..')
     df = features.compute_future_rolling_volatility(df,horizon_seconds=horizon_seconds)
-    print('Finished computing target!\n')
 
     feature_cols = [c for c in df.columns if c.startswith('rolling_vol')] + \
                    [c for c in df.columns if c.startswith('tod_')] + \
@@ -110,7 +106,9 @@ def train_single_pair(df, horizon_seconds, window_scale=0.75, window_factor=8, l
     y_pred = model_final.predict(X_test)
     eps = 1e-8
     rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
-    baseline_medium = np.log(X_test[:, feature_cols.index(rolling_cols[len(rolling_cols)//2])] + eps)
+    col_idx = feature_cols.index(rolling_cols[len(rolling_cols)//2])
+    baseline_medium = np.log(np.clip(X_test[:, col_idx], eps, None))
+    # baseline_medium = np.log(X_test[:, feature_cols.index(rolling_cols[len(rolling_cols)//2])] + eps)
 
     rmse_model = np.sqrt(mean_squared_error(y_test, y_pred))
     mae_model  = mean_absolute_error(y_test, y_pred)

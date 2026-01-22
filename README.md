@@ -1,4 +1,4 @@
-# volare: Tech Finance FX Volatility Forecasting
+# volare: FX Volatility Forecasting with Machine Learning
 
 This project forecasts FX spot volatility using **LightGBM**, a gradient boosting machine learning model, trained on high-frequency candle data in Python.  
 It demonstrates a complete workflow of feature engineering, model training, validation, and forecasting, with practical applications for liquidity providers and FX traders.
@@ -9,23 +9,25 @@ It demonstrates a complete workflow of feature engineering, model training, vali
 
 The pipeline consists of:
 
-- **Data ingestion:** import candle data (`data.py`)
-- **Feature generation** (`features.py`): log returns, high-low ranges, rolling volatility, rolling future volatility, volatility slope, z-score  
-- **Train/test split:** chronological split to respect time dependencies  
-- **Model training** (`model.py`): **LightGBM** trained on engineered features with optimised fitting  
-- **Model validation** (`model.py`): RMSE, MAE, and visual inspection  
-- **Forecasting** (`predict.py`): generate volatility forecasts on new data  
-- **Visualisation** (`visualisation.py`): plots and performance metrics  
+- **Data ingestion** (`data.py`): load candle data in CSV format  
+- **Feature generation** (`features.py`): log returns, high-low ranges, rolling volatility, multi-window rolling volatilities, volatility slope, z-score, and acceleration  
+- **Train/test split**: chronological split to respect time dependencies  
+- **Model training** (`model.py`): **LightGBM** trained on engineered features with optimal fitting  
+- **Model validation**: RMSE, MAE, and visual inspection of predictions  
+- **Forecasting** (`predict.py`): generate short- to medium-term volatility forecasts on new data  
+- **Visualisation** (`visualisation.py` and GUI): plots and performance metrics, with interactive forecast exploration  
 
 ---
 
 ## Features
 
-- Customisable forecast horizons (e.g., 10–30 minutes)  
-- Multi-window rolling volatility features  
+- Customisable forecast horizons (e.g., 10–60 minutes)  
+- Multi-window rolling volatility features (short, medium, long windows)  
 - Volatility-of-volatility, slope, and acceleration features  
 - Chronological train/test split and optional walk-forward validation  
 - Model persistence: save and reload **LightGBM** models for downstream use  
+
+> **Caution:** Features are currently tuned for short horizons (~1 hour). Longer horizons may require re-tuning windows or adding features capturing slower volatility dynamics.
 
 ---
 
@@ -45,103 +47,84 @@ By forecasting volatility directly rather than prices, this project highlights a
 
 This repository does not include raw FX data.
 
-To run the pipeline, users must provide their own historical FX candle data formatted consistently with the training setup used in this project:
+To run the pipeline, users must provide historical FX candle data formatted consistently with the training setup:
 
-- Fixed time-resolution candles (e.g. 10-second)
-- Columns in order: `timestamp`, `open`, `high`, `low`, `close`
-- Continuous time series without gaps
+- Fixed time-resolution candles (e.g., 10-second intervals)  
+- Columns: `timestamp`, `open`, `high`, `low`, `close`  
+- Continuous time series without gaps  
 
-The trained model and feature pipeline assume this structure. Applying the model to differently formatted data would require retraining or feature redefinition.
+Applying the model to differently formatted data requires retraining or feature redefinition.
 
 ---
 
 ## Methodology
 
 1. Compute features and target from candle data  
-2. Train-test split in chronological order  
-3. Train **LightGBM** on features  
+2. Chronological train-test split  
+3. Train **LightGBM** on engineered features  
 4. Compare **LightGBM** model to simple baselines:  
-   - **Lagged rolling volatility:** previous backward-looking volatility  
-   - **Short-window rolling volatility:** previous backward-looking volatility using a short window
-   - **Medium-window rolling volatility:** previous backward-looking volatility using a medium window
-   - **Long-window rolling volatility:** previous backward-looking volatility using a long window
-5. Evaluate with RMSE, MAE, and visual inspection of predictions  
+   - **Short-window rolling volatility:** recent backward-looking volatility  
+   - **Medium-window rolling volatility:** intra-hour trends  
+   - **Long-window rolling volatility:** longer-term trends  
+5. Evaluate with RMSE, MAE, and visual inspection  
+6. Optionally, retrain the model on the full training data using the **optimal number of iterations** for improved performance  
+
+> **Interactive GUI:** Allows users to load CSVs, visualize predicted vs actual volatility, compare forecasts with baselines, and export results. Forecast improvements are displayed for the selected horizon.
 
 ---
 
-## Results (Training / Within-Sample)
+## Results
 
-<!-- | Model | RMSE | MAE |
-|-------|------|-----|
-| Persistence | 0.0012 | 0.0009 |
-| Rolling Vol | 0.0010 | 0.0008 |
-| **LightGBM** | **0.0008** | **0.0006** | -->
+### Within-Sample Performance
 
-Visualisations are below and are available in `results/plots/`. These results reflect **the model’s performance on the training data** (i.e., the first 800,000 candles of a single FX currency pair). Predictions shown here are **within-sample**, meaning they indicate how well the model has learned the data it has seen and **do not represent performance on unseen data**. Model hyperparameters are not yet tuned.  
+The figures below show **within-sample performance** on the training data (first 800,000 candles of a single FX pair).  
+> These results indicate how well the model learns historical patterns and **do not represent out-of-sample performance**.
 
-Features used to train the model include:
-
-- **Past rolling volatility**
-- **Lagged rolling volatility**
-- **Multi-window rolling volatility**
-- **Intra-day seasonality**
-- **Volatility slope**
-- **Volatility z-score**
-- **Volatility acceleration**
-
-<!-- ### Predicted vs Actual Volatility
-
-**Figure:** Predicted vs actual log-volatility.  
-
-*Note:* Results should be interpreted as within-pair temporal generalisation rather than cross-asset performance.
-
-![Predicted vs Actual Volatility](results/plots/predicted_vs_actual_volatility.png) -->
+**Features used:** past rolling volatility, lagged rolling volatility, multi-window rolling volatility, intra-day seasonality, volatility slope, z-score, acceleration.
 
 ### Predicted vs Actual Volatility with Baseline Comparisons
 
-**Figure:** Predicted vs actual log-volatility compared to standard baselines for a horizon of 30 mins. The model learns the feature mapping of the data.
-
 ![Predicted vs Actual Volatility Baseline Compare](results/plots/predicted_vs_actual_volatility_baseline_compare.png)
 
-### Model Residuals for Regime Handling
+> X-axis shows candle index rather than raw timestamps to anonymize data.  
+> The model learns feature mappings beyond simple historical smoothing.
 
-**Figure:** Residuals between the data and model (for first 50,000 candles) with rolling volatility for reference, to identify regime handling.
+### Model Residuals
 
 ![Model Residuals for Regime Handling](results/plots/model_residual_volatility.png)
 
-### Statistical Comparison of Baselines and Machine Learning Model
+> Residuals help identify volatility regime changes and periods where the model may under- or over-predict.
 
-**Figure:** RMSE and MAE of baselines and LightGBM. This model's prediction errors are 33% smaller than using the simple medium-window rolling volatility as a forecast. The model provides predictive signal beyond simple historical smoothing.
+### Performance vs Baselines
 
 ![Performance vs Baselines](results/plots/performance_baseline_compare.png)
 
-### Performance vs Horizon
+- RMSE and MAE improvements over the medium-window rolling volatility baseline  
+- Model forecast errors are typically 20–35% smaller than the simple baseline
 
-**Figure:** Model performance as a function of forecast horizon.  
-- **Left panel:** Forecasting error decreases as the horizon increases, indicating improved accuracy for longer-term predictions.  
-- **Right panel:** Relative improvement of the model compared to a medium-window rolling volatility baseline. The model achieves a 22% improvement at short horizons, dips around a 30-minute horizon, and rises again to approximately 22% for longer horizons (60 minutes).
+### Performance vs Horizon
 
 ![Performance vs Horizon](results/plots/multi_horizon_performance_300000_cand.png)
 
-## Tuned Model Performance on Unseen Data
+- Forecasting error varies with horizon: short-term forecasts (~60 min) may see marginal or even negative improvements, while medium-term horizons can capture stronger predictive signals  
+- Percentage improvement shows the model’s predictive signal relative to the medium-window baseline  
 
-Once feature hyperparameters are tuned, the model is evaluated on an **unseen test set** of 1,000,000 candles (not included in training) using a 60-minute horizon. This reflects **out-of-sample performance**, showing how well the model generalizes to new data.
+### Out-of-Sample / Unseen Data
 
-### Performance vs FX Pair
-
-**Figure:** Model performance relative to a medium-window rolling-volatility baseline across multiple FX pairs, trained on the first 1,000,000 candles using a 60-minute horizon, with pair-specific tuned hyperparameters.
-
-Bars show **percentage improvement in RMSE and MAE** over the medium-window baseline. The model outperforms the baseline across the board. This highlights which pairs benefit most and how well the model generalizes across FX pairs.
+Once feature hyperparameters are tuned, the model can be evaluated on an **unseen test set** of 1,000,000 candles (not included in training) using a 60-minute horizon.
 
 ![Performance vs FX Pair](results/plots/tuned_performance_vs_pair.png)
+
+- Shows **percentage improvement in RMSE and MAE** over the baseline across multiple FX pairs  
+- Highlights which pairs benefit most from machine learning forecasts  
 
 ---
 
 ## Usage
 
-### Install
+### Installation
 
-Clone the repo and install the package in editable mode. This links the package to your Python environment while keeping the source code editable.
+Clone the repo and install the package in editable mode:
 
 ```bash
 git clone https://github.com/dominicjtaylor/fx-volatility-forecasting.git
@@ -156,8 +139,38 @@ Once the package is installed, you can import it in your Python scripts or inter
 
 ```python
 import volare
+from volare import data, features, model
 
-# Example: call a function from the package
-result = volare.compute_rolling_volatility(data)
-print(result)
+# Load candle data
+df = data.load_last_candles("path/to/your/data.csv")
+
+# Compute multi-window rolling volatility
+df_features = features.compute_multi_window_rolling_vol(df, horizon_seconds=3600)
+
+# Train/test split
+X_train, X_test, y_train, y_test = model.split_data(df_features, feature_cols=[c for c in df_features.columns if 'rolling_vol' in c])
+
+# Train LightGBM
+lgb_model, _ = model.train_model(X_train, y_train, X_test, y_test)
+
+# Forecast
+preds = lgb_model.predict(X_test)
+```
+
+### Interactive GUI
+
+![Applied Model](results/plots/applied_model.png)
+
+To explore forecasts interactively:
+
+1. Navigate to the `gui` folder:
+
+```bash
+cd gui
+```
+
+2. Run the GUI script:
+
+```bash
+python apply_multi_pair_model.py
 ```

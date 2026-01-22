@@ -154,22 +154,72 @@ def compute_rolling_stats(df, window_seconds=3*60):
     df['roll_std'] = df['log_return'].rolling(window=window_candles).std()
     return df
 
-def compute_multi_window_rolling_vol(df, horizon_seconds, window_multipliers=[0.05, 0.1, 0.25, 0.5, 1, 3, 10], base_col='log_return'):
+# def compute_multi_window_rolling_vol(df, horizon_seconds, window_multipliers=[0.05, 0.1, 0.25, 0.5, 1, 3, 10], base_col='log_return'):
+#     """
+#     Compute rolling volatilities over multiple windows (HAR-RV style) as features.
+#     window_multipliers: Multiples of forecast horizon for the rolling windows
+#     base_col: Column name to compute rolling vol on (default 'log_return')
+#     Adds new column to the dataframe.
+#     """
+#     df = df.copy()
+    
+#     print('Computing multi-window rolling volatility..')
+#     time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
+    
+#     for k in window_multipliers:
+#         window_candles = max(int(k * horizon_seconds / time_res), 2)
+#         col_name = f'rolling_vol_{window_candles}_cand'
+#         df[col_name] = df[base_col].rolling(window_candles).std()
+    
+#     return df
+
+def compute_multi_window_rolling_vol(df, horizon_seconds, base_col='log_return', add_slope=True, add_ratios=True):
     """
-    Compute rolling volatilities over multiple windows (HAR-RV style) as features.
-    window_multipliers: Multiples of forecast horizon for the rolling windows
+    Compute rolling volatilities over multiple windows for short term forecasts.
+    window_multipliers: Multiples of forecast horizon for the rolling windows (mostly short).
     base_col: Column name to compute rolling vol on (default 'log_return')
     Adds new column to the dataframe.
+    add_slope: compute difference between successive rolling vol values.
+    add_ratios: compute ratios of short/medium windows.
     """
+
     df = df.copy()
-    
-    print('Computing multi-window rolling volatility..')
     time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
     
+    # Define windows in seconds relative to horizon
+    # More short windows (5–15 min), medium (~30–60 min), long (~2–4 h)
+    window_multipliers = [0.05, 0.1, 0.2, 0.3, 0.5, 1.0, 3.0, 6.0]
+    rolling_cols = []
+    
+    print("Computing multi-window rolling volatility features...")
     for k in window_multipliers:
         window_candles = max(int(k * horizon_seconds / time_res), 2)
         col_name = f'rolling_vol_{window_candles}_cand'
         df[col_name] = df[base_col].rolling(window_candles).std()
+        rolling_cols.append(col_name)
+    
+    # Optional: slopes of rolling vol
+    if add_slope:
+        new_cols = {}
+        for col in rolling_cols:
+            slope_col = col + '_slope'
+            # df[slope_col] = df[col].diff()
+            # rolling_cols.append(slope_col)
+            new_cols[slope_col] = df[col].diff()
+        df = pd.concat([df, pd.DataFrame(new_cols, index=df.index)], axis=1)
+    
+    # Optional: ratios of short/medium windows
+    if add_ratios:
+        short_cols = rolling_cols[:4]  # first 4 short windows
+        medium_cols = rolling_cols[4:6]  # medium windows
+        new_cols = {}
+        for s in short_cols:
+            for m in medium_cols:
+                ratio_col = f'{s}_over_{m}'
+                new_cols[ratio_col] = df[s] / (df[m] + 1e-8)
+                rolling_cols.append(ratio_col)  # still update feature list
+
+        df = pd.concat([df, pd.DataFrame(new_cols, index=df.index)], axis=1)
     
     return df
 
