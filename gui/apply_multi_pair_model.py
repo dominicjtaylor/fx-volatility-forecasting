@@ -27,7 +27,7 @@ MODEL_DIR = SCRIPT_DIR / "../results/models"
 EPS = 1e-8
 HORIZON_SECONDS = 60 * 60  # Fixed 60-min horizon
 DEFAULT_CANDLES = 1_000_000
-DEFAULT_DISPLAY_MINUTES = 720
+DEFAULT_DISPLAY_MINUTES = 2880
 
 # ------------------------------
 # GUI Class
@@ -75,8 +75,8 @@ class VolatilityApp(QWidget):
         slider_layout.addWidget(self.slider_label)
 
         self.time_slider = QSlider(Qt.Horizontal)
-        self.time_slider.setMinimum(1)
-        self.time_slider.setMaximum(1440)
+        self.time_slider.setMinimum(HORIZON_SECONDS * 2)
+        self.time_slider.setMaximum(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.valueChanged.connect(self.update_plot)
         slider_layout.addWidget(self.time_slider)
@@ -213,7 +213,7 @@ class VolatilityApp(QWidget):
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
         self.ax.legend(loc='lower left')
-        self.ax.set_title(f"FX Pair: {self.pair_name}")
+        self.ax.set_title(f"{self.pair_name}")
         self.fig.tight_layout()
         self.canvas.draw()
 
