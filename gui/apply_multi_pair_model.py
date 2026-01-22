@@ -93,6 +93,18 @@ class VolatilityApp(QWidget):
         path = event.mimeData().urls()[0].toLocalFile()
         self.load_csv(path)
 
+    def export_current_plot(self):
+        if self.fig is None:
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Save Plot", "", "PNG Files (*.png);;PDF Files (*.pdf);;SVG Files (*.svg)")
+        if not path:
+            return
+        try:
+            self.fig.savefig(path, dpi=300, bbox_inches='tight')
+            QMessageBox.information(self, "Saved", f"Plot saved to {path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save plot:\n{e}")
+
     def init_ui(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -109,6 +121,11 @@ class VolatilityApp(QWidget):
         self.export_btn.clicked.connect(self.export_predictions)
         controls.addWidget(self.export_btn)
         layout.addLayout(controls)
+
+        self.export_plot_btn = QPushButton("Export Plot")
+        self.export_plot_btn.setEnabled(False)
+        self.export_plot_btn.clicked.connect(self.export_current_plot)
+        controls.addWidget(self.export_plot_btn)
 
         self.rmse_label = QLabel("RMSE improvement: N/A")
         self.rmse_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -218,6 +235,7 @@ class VolatilityApp(QWidget):
         self.pred_horizon = pred_future
 
         self.export_btn.setEnabled(True)
+        self.export_plot_btn.setEnabled(True)
         self.update_plot()
 
     # ---------------- Plotting ----------------
