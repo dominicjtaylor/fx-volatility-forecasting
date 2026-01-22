@@ -27,7 +27,7 @@ MODEL_DIR = SCRIPT_DIR / "../results/models"
 EPS = 1e-8
 HORIZON_SECONDS = 60 * 60  # Fixed 60-min horizon
 DEFAULT_CANDLES = 1_000_000
-DEFAULT_DISPLAY_MINUTES = 2880
+DEFAULT_DISPLAY_MINUTES = 1440
 
 # ------------------------------
 # GUI Class
@@ -71,13 +71,13 @@ class VolatilityApp(QWidget):
 
         # ---------------- Slider ----------------
         slider_layout = QHBoxLayout()
-        self.slider_label = QLabel(f"Display last {DEFAULT_DISPLAY_MINUTES/60} hr")
+        self.slider_label = QLabel(f"Display last {DEFAULT_DISPLAY_MINUTES} min")
         slider_layout.addWidget(self.slider_label)
 
         self.time_slider = QSlider(Qt.Horizontal)
-        self.time_slider.setMinimum(HORIZON_SECONDS * 2/60)
-        self.time_slider.setMaximum(DEFAULT_DISPLAY_MINUTES/120)
-        self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES/60)
+        self.time_slider.setMinimum(1)
+        self.time_slider.setMaximum(DEFAULT_DISPLAY_MINUTES)
+        self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.valueChanged.connect(self.update_plot)
         slider_layout.addWidget(self.time_slider)
         layout.addLayout(slider_layout)
@@ -178,8 +178,8 @@ class VolatilityApp(QWidget):
         if not self.ax.get_visible():
             self.ax.set_visible(True)
 
-        minutes = self.time_slider.value()*60
-        self.slider_label.setText(f"Display last {minutes/60} hr")
+        minutes = self.time_slider.value()
+        self.slider_label.setText(f"Display last {minutes} min")
         seconds = minutes * 60
 
         print('Compute time for axes')
