@@ -14,7 +14,7 @@ sys.path.append(str(SRC_DIR))
 from volare import data, features, model
 plt.style.use('../styles/science.mplstyle')
 
-def train_single_pair(df, horizon_seconds, k=8, alpha=1):
+def train_single_pair(df, horizon_seconds, window_scale=0.75, window_factor=8, lag_scale=1):
     """
     Train a LightGBM model for a single currency pair.
     Stage 1: training + validation to find best_iteration
@@ -24,8 +24,8 @@ def train_single_pair(df, horizon_seconds, k=8, alpha=1):
     # --- Compute features for this horizon ---
     print('\nComputing features..')
     df = features.compute_log_return(df)
-    df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, k=k)
-    df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, alpha=alpha, k=k)
+    df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, window_scale=window_scale, window_factor=window_factor)
+    df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, lag_scale=lag_scale, window_factor=window_factor)
     df = features.compute_multi_window_rolling_vol(df, horizon_seconds=horizon_seconds)
     df = features.compute_intraday_seasonality(df)
     df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)

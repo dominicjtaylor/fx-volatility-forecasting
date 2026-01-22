@@ -47,7 +47,7 @@ def logged_lag_return(df, lag_seconds):
 
     return df
 
-def compute_rolling_volatility(df, horizon_seconds, k):
+def compute_rolling_volatility(df, horizon_seconds, window_scale, window_factor):
     """
     Compute rolling volatility of log returns.
     Windows overlap to capture short-term changes.
@@ -56,7 +56,7 @@ def compute_rolling_volatility(df, horizon_seconds, k):
     """
     df = df.copy()
 
-    window_seconds = k * horizon_seconds
+    window_seconds = window_scale * window_factor * horizon_seconds
 
     print('Computing past rolling volatility..')
     time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
@@ -68,7 +68,7 @@ def compute_rolling_volatility(df, horizon_seconds, k):
 
     return df
 
-def compute_rolling_volatility_future(history_df, pred_vol=None, horizon_seconds=10, k=8, time_res=None):
+def compute_rolling_volatility_future(history_df, pred_vol=None, horizon_seconds=10, window_factor=8, time_res=None):
     """
     Compute rolling volatility for autoregressive simulation of future steps.
     history_df: historical DataFrame containing at least 'rolling_vol' (or 'close') and timestamps.
@@ -83,7 +83,7 @@ def compute_rolling_volatility_future(history_df, pred_vol=None, horizon_seconds
             raise ValueError("Need at least 2 rows to compute time resolution")
         time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
 
-    window_size = int(np.ceil(k * horizon_seconds / time_res))
+    window_size = int(np.ceil(window_factor * horizon_seconds / time_res))
     df_window = df.iloc[-window_size:].copy()
 
     # Determine the last rolling volatility to use
@@ -116,7 +116,7 @@ def compute_rolling_volatility_future(history_df, pred_vol=None, horizon_seconds
 
     return updated_row
 
-def compute_lagged_rolling_volatility(df,horizon_seconds,alpha,k,lag_multipliers=[0.25, 0.5, 1, 2, 4]):
+def compute_lagged_rolling_volatility(df,horizon_seconds,lag_scale,window_factor,lag_multipliers=[0.25, 0.5, 1, 2, 4]):
     """
     Compute lagged rolling volatility.
     Adds column to dataframe.
@@ -125,8 +125,8 @@ def compute_lagged_rolling_volatility(df,horizon_seconds,alpha,k,lag_multipliers
 
     print('Computing lagged rolling volatility..')
     time_res = (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]).total_seconds()
-    window_seconds = k * horizon_seconds
-    lag_seconds = [alpha * f * horizon_seconds for f in lag_multipliers]
+    window_seconds = window_factor * horizon_seconds
+    lag_seconds = [lag_scale * f * horizon_seconds for f in lag_multipliers]
     lag_steps = [int(ls / time_res) for ls in lag_seconds]
     window_candles = int(window_seconds / time_res)
 
