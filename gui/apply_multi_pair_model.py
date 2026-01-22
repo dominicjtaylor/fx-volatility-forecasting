@@ -127,12 +127,16 @@ class VolatilityApp(QWidget):
         self.export_plot_btn.clicked.connect(self.export_current_plot)
         controls.addWidget(self.export_plot_btn)
 
-        self.rmse_label = QLabel("RMSE improvement: N/A")
+        self.rmse_label = QLabel("RMSE improvement vs Baseline: N/A")
         self.rmse_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.mae_label  = QLabel("MAE improvement: N/A")
+        self.mae_label  = QLabel("MAE improvement vs Baseline: N/A")
         self.mae_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         layout.addWidget(self.rmse_label)
         layout.addWidget(self.mae_label)
+
+        self.forecast_label = QLabel("Model Forecast: N/A")
+        self.forecast_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        layout.addWidget(self.forecast_label)        
 
         # ---------------- Slider ----------------
         slider_layout = QHBoxLayout()
@@ -279,14 +283,14 @@ class VolatilityApp(QWidget):
                 rmse_improve_global = 100 * (rmse_base_global - rmse_model_global) / rmse_base_global
                 mae_improve_global  = 100 * (mae_base_global - mae_model_global) / mae_base_global
 
-                self.rmse_label.setText(f"RMSE improvement vs medium: {rmse_improve_global:.2f}%")
-                self.mae_label.setText(f"MAE improvement vs medium: {mae_improve_global:.2f}%")
+                self.rmse_label.setText(f"RMSE improvement vs Baseline: {rmse_improve_global:.2f}%")
+                self.mae_label.setText(f"MAE improvement vs Baseline: {mae_improve_global:.2f}%")
             else:
-                self.rmse_label.setText("RMSE improvement: N/A")
-                self.mae_label.setText("MAE improvement: N/A")
+                self.rmse_label.setText("RMSE improvement vs Baseline: N/A")
+                self.mae_label.setText("MAE improvement vs Baseline: N/A")
         else:
-            self.rmse_label.setText("RMSE improvement: N/A")
-            self.mae_label.setText("MAE improvement: N/A")
+            self.rmse_label.setText("RMSE improvement vs Baseline: N/A")
+            self.mae_label.setText("MAE improvement vs Baseline: N/A")
 
         print("Clear axes")
         self.ax.clear()
@@ -310,9 +314,10 @@ class VolatilityApp(QWidget):
         self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8, zorder=3)
         self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5, zorder=2)
         self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
+        baseline_forecast = np.full(len(self.pred_horizon), self.medium_baseline[-1])
+        self.ax.plot(self.t_horizon, baseline_forecast, label="Baseline Forecast", lw=1, color='steelblue', alpha=0.5, ls='--', zorder=2)
         self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
 
-        # ----------------- Confidence band -----------------
         # Use global RMSE as confidence
         upper_conf = preds_display + mae_model_global
         lower_conf = preds_display - mae_model_global
@@ -327,6 +332,16 @@ class VolatilityApp(QWidget):
         #Hide time ticks
         self.ax.set_xticks([])          
         self.ax.set_xticklabels([]) 
+
+        model_forecast = self.pred_horizon[-1]
+        baseline_forecast = self.medium_baseline[-1]
+        forecast_improve = 100 * (baseline_forecast - model_forecast) / baseline_forecast
+        rmse_uncertainty = rmse_model_global
+        mae_uncertainty = mae_model_global
+
+        self.forecast_label.setText(
+            f"Forecast — Model: {model_forecast:.4f} ± RMSE {rmse_uncertainty:.4f} / MAE {mae_uncertainty:.4f}, "
+            f"Baseline: {baseline_forecast:.4f}, Improvement: {forecast_improve:.2f}%")
 
         self.canvas.draw()
 
