@@ -324,10 +324,16 @@ class VolatilityApp(QWidget):
         # Use global RMSE as confidence
         upper_conf = preds_display + mae_model_global
         lower_conf = preds_display - mae_model_global
+        #Show candle number
         self.ax.fill_between(x_idx, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
+        #Show time
         # self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
 
+        #Show candle number
         self.ax.set_xlabel("Candle Index")
+        self.ax.invert_xaxis()
+
+        #Show time
         # self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
         self.ax.legend(loc='lower left',frameon=True)
