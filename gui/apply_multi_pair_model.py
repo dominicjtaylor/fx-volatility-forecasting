@@ -71,7 +71,7 @@ class VolatilityApp(QWidget):
 
         # ---------------- Slider ----------------
         slider_layout = QHBoxLayout()
-        self.slider_label = QLabel(f"Display last {DEFAULT_DISPLAY_MINUTES/60} hr")
+        self.slider_label = QLabel(f"Display last %.1f hr"%(DEFAULT_DISPLAY_MINUTES/60))
         slider_layout.addWidget(self.slider_label)
 
         self.time_slider = QSlider(Qt.Horizontal)
@@ -179,7 +179,7 @@ class VolatilityApp(QWidget):
             self.ax.set_visible(True)
 
         minutes = self.time_slider.value()
-        self.slider_label.setText(f"Display last {minutes/60} hr")
+        self.slider_label.setText(f"Display last %.1f hr"%(minutes/60))
         seconds = minutes * 60
 
         print('Compute time for axes')
