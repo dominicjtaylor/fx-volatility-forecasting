@@ -113,9 +113,9 @@ class VolatilityApp(QWidget):
         # ---------------- Plot ----------------
         self.fig, self.ax = plt.subplots(figsize=(12, 4))
         # self.ax.set_visible(False)
-        self.show_drop_placeholder()
         self.canvas = FigureCanvas(self.fig)
         layout.addWidget(self.canvas)
+        self.show_drop_placeholder()
 
         self.show()
 
