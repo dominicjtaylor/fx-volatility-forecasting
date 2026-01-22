@@ -57,8 +57,8 @@ class VolatilityApp(QWidget):
         self.ax.clear()
         self.ax.set_visible(True)
 
-        bg_color = "#222222" if self.dark_mode else "white"
-        fg_color = "darkgrey" if self.dark_mode else "black"
+        bg_color = "#222222" if self.dark_mode else "darkgrey"
+        fg_color = "white" if self.dark_mode else "black"
 
         self.fig.patch.set_facecolor(bg_color)
         self.ax.set_facecolor(bg_color)
