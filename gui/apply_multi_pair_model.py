@@ -229,11 +229,9 @@ class VolatilityApp(QWidget):
         self.actual_vol = df.loc[self.df_clean.index, 'rolling_log_future_vol'].values
 
         # Simulate forecast horizon
-        print('Simulating future features')
         X_future, self.t_horizon = model.simulate_future_features_conditional(
             df=df, timestamps=df['timestamp'], horizon_seconds=horizon_seconds
         )
-        print('Done simulating future features')
         pred_future = self.model.predict(X_future)
         pred_future[0] = self.preds[-1]
         self.pred_horizon = pred_future
@@ -254,12 +252,10 @@ class VolatilityApp(QWidget):
         self.slider_label.setText(f"Display last %.1f hr"%(minutes/60))
         seconds = minutes * 60
 
-        print('Compute time for axes')
         t_end = self.timestamps.iloc[self.df_clean.index[-1]]
         t_start = t_end - pd.Timedelta(seconds=seconds)
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
-        print('Get timestamps')
         t_display = self.timestamps.iloc[self.df_clean.index][mask]
         preds_display = self.preds[mask]
         baseline_display = self.medium_baseline[mask]
@@ -292,7 +288,6 @@ class VolatilityApp(QWidget):
             self.rmse_label.setText("RMSE improvement vs Baseline: N/A")
             self.mae_label.setText("MAE improvement vs Baseline: N/A")
 
-        print("Clear axes")
         self.ax.clear()
         for spine in self.ax.spines.values():
             spine.set_visible(True)
