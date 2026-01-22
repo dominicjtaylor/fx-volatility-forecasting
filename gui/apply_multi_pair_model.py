@@ -80,6 +80,18 @@ class VolatilityApp(QWidget):
 
         self.canvas.draw()
 
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if len(urls) == 1 and urls[0].toLocalFile().lower().endswith(".csv"):
+                event.acceptProposedAction()
+                return
+        event.ignore()
+
+    def dropEvent(self, event):
+        path = event.mimeData().urls()[0].toLocalFile()
+        self.load_csv(path)
+
     def init_ui(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
