@@ -243,31 +243,32 @@ class VolatilityApp(QWidget):
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
 
-        if len(actual_display) > 0:
-            # Mask out NaNs
-            mask_valid = (~np.isnan(actual_display)) & (~np.isnan(preds_display)) & (~np.isnan(baseline_display))
-            if mask_valid.any():
-                actual_valid = actual_display[mask_valid]
-                preds_valid  = preds_display[mask_valid]
-                baseline_valid = baseline_display[mask_valid]
+        # ----------------- Compute global metrics -----------------
+        if len(self.actual_vol) > 0:
+            # Mask out NaNs globally
+            mask_valid_global = (~np.isnan(self.actual_vol)) & (~np.isnan(self.preds)) & (~np.isnan(self.medium_baseline))
+            if mask_valid_global.any():
+                actual_global = self.actual_vol[mask_valid_global]
+                preds_global  = self.preds[mask_valid_global]
+                baseline_global = self.medium_baseline[mask_valid_global]
 
-                rmse_model = np.sqrt(mean_squared_error(actual_valid, preds_valid))
-                mae_model  = mean_absolute_error(actual_valid, preds_valid)
-                rmse_base  = np.sqrt(mean_squared_error(actual_valid, baseline_valid))
-                mae_base   = mean_absolute_error(actual_valid, baseline_valid)
+                # Global RMSE/MAE
+                rmse_model_global = np.sqrt(mean_squared_error(actual_global, preds_global))
+                mae_model_global  = mean_absolute_error(actual_global, preds_global)
+                rmse_base_global  = np.sqrt(mean_squared_error(actual_global, baseline_global))
+                mae_base_global   = mean_absolute_error(actual_global, baseline_global)
 
-                rmse_improve = 100 * (rmse_base - rmse_model) / rmse_base
-                mae_improve  = 100 * (mae_base - mae_model) / mae_base
+                rmse_improve_global = 100 * (rmse_base_global - rmse_model_global) / rmse_base_global
+                mae_improve_global  = 100 * (mae_base_global - mae_model_global) / mae_base_global
 
-                self.rmse_label.setText(f"RMSE improvement vs medium: {rmse_improve:.2f}%")
-                self.mae_label.setText(f"MAE improvement vs medium: {mae_improve:.2f}%")
+                self.rmse_label.setText(f"RMSE improvement vs medium: {rmse_improve_global:.2f}%")
+                self.mae_label.setText(f"MAE improvement vs medium: {mae_improve_global:.2f}%")
             else:
                 self.rmse_label.setText("RMSE improvement: N/A")
                 self.mae_label.setText("MAE improvement: N/A")
         else:
             self.rmse_label.setText("RMSE improvement: N/A")
             self.mae_label.setText("MAE improvement: N/A")
-
 
         print("Clear axes")
         self.ax.clear()
@@ -282,11 +283,22 @@ class VolatilityApp(QWidget):
         self.ax.xaxis.label.set_color(fg_color)
         self.ax.title.set_color(fg_color)
 
-        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", lw=1.5, color='k', alpha=0.6)
-        self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8)
-        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5)
-        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--')
-        self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon')
+        if self.dark_mode:
+            actual_color = 'w'
+        else:
+            actual_color = 'k'
+
+        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", lw=2, color=actual_color, alpha=0.6, zorder=1)
+        self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8, zorder=3)
+        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5, zorder=2)
+        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
+        self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
+
+        # ----------------- Confidence band -----------------
+        # Use global RMSE as confidence
+        upper_conf = preds_display + mae_model_global
+        lower_conf = preds_display - mae_model_global
+        self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")

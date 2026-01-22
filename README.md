@@ -69,7 +69,7 @@ The trained model and feature pipeline assume this structure. Applying the model
 
 ---
 
-## Results
+## Results (Training / Within-Sample)
 
 <!-- | Model | RMSE | MAE |
 |-------|------|-----|
@@ -77,7 +77,9 @@ The trained model and feature pipeline assume this structure. Applying the model
 | Rolling Vol | 0.0010 | 0.0008 |
 | **LightGBM** | **0.0008** | **0.0006** | -->
 
-Visualisations are below and are available in `results/plots/`, for the model trained on a single FX currency pair and **only on the first 800,000 candles** of the time series, with predictions evaluated on an unseen 200,000 candles. The model hyperparameters are yet to be tuned. Features used to train the model include:
+Visualisations are below and are available in `results/plots/`. These results reflect **the model’s performance on the training data** (i.e., the first 800,000 candles of a single FX currency pair). Predictions shown here are **within-sample**, meaning they indicate how well the model has learned the data it has seen and **do not represent performance on unseen data**. Model hyperparameters are not yet tuned.  
+
+Features used to train the model include:
 
 - **Past rolling volatility**
 - **Lagged rolling volatility**
@@ -128,6 +130,10 @@ Visualisations are below and are available in `results/plots/`, for the model tr
 Bars show **percentage improvement in RMSE and MAE** over the medium-window baseline. The model outperforms the baseline across the board. This highlights which pairs benefit most and how well the model generalizes across FX pairs.
 
 ![Performance vs FX Pair](results/plots/performance_vs_pair.png)
+
+## Tuned Model Performance on Unseen Data
+
+Once feature hyperparameters are tuned, the model is evaluated on an **unseen test set** of 1,000,000 candles (not included in training) using a 60-minute horizon. This reflects **out-of-sample performance**, showing how well the model generalizes to new data.
 
 ---
 
