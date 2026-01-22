@@ -14,7 +14,7 @@ sys.path.append(str(SRC_DIR))
 from volare import data, features, model
 plt.style.use('../styles/science.mplstyle')
 
-def train_single_pair(df, horizon_seconds, window_scale=0.75, window_factor=8, lag_scale=1):
+def train_single_pair(df, horizon_seconds, window_factor, window_scale, lag_scale):
     """
     Train a LightGBM model for a single currency pair.
     Stage 1: training + validation to find best_iteration
@@ -100,8 +100,10 @@ if __name__ == "__main__":
     HORIZON_SECONDS = 60 * 60
     NROWS = 1_000_000
 
-    # --- Load and prepare data ---
+    best_params_df = pd.read_csv('../results/feature_tuning/best_params.csv')
+    best_params_df.set_index('pair_name', inplace=True)
 
+    # --- Load and prepare data ---
     results = {}
     for file in csv_files:
 
@@ -115,7 +117,19 @@ if __name__ == "__main__":
         quote_currency = currencies[3:].upper()
         pair_name = f"{base_currency}-{quote_currency}"
 
-        lgb_model, rmse_improve, mae_improve = train_single_pair(df0,horizon_seconds=HORIZON_SECONDS)
+        if pair_name in best_params_df.index:
+            params = best_params_df.loc[pair_name]
+            window_factor = params['window_factor']
+            window_scale  = params['window_scale']
+            lag_scale     = params['lag_scale']
+        else:
+            # fallback defaults
+            window_factor, window_scale, lag_scale = 8, 0.75, 1
+
+        lgb_model, rmse_improve, mae_improve = train_single_pair(df0,horizon_seconds=HORIZON_SECONDS,
+                                                                 window_factor=window_factor,
+                                                                 window_scale=window_scale,
+                                                                 lag_scale=lag_scale)
         results[pair_name] = {"RMSE_vs_medium(%)": rmse_improve, "MAE_vs_medium(%)": mae_improve}
 
         # --- Save model ---

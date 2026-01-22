@@ -109,6 +109,11 @@ class VolatilityApp(QWidget):
         controls.addWidget(self.export_btn)
         layout.addLayout(controls)
 
+        self.rmse_label = QLabel("RMSE improvement: N/A")
+        self.mae_label  = QLabel("MAE improvement: N/A")
+        layout.addWidget(self.rmse_label)
+        layout.addWidget(self.mae_label)
+
         # ---------------- Slider ----------------
         slider_layout = QHBoxLayout()
         self.slider_label = QLabel(f"Display last %.1f hr"%(DEFAULT_DISPLAY_MINUTES/60))
@@ -121,11 +126,6 @@ class VolatilityApp(QWidget):
         self.time_slider.valueChanged.connect(self.update_plot)
         slider_layout.addWidget(self.time_slider)
         layout.addLayout(slider_layout)
-
-        self.rmse_label = QLabel("RMSE improvement: N/A")
-        self.mae_label  = QLabel("MAE improvement: N/A")
-        layout.addWidget(self.rmse_label)
-        layout.addWidget(self.mae_label)
 
         # ---------------- Plot ----------------
         self.fig, self.ax = plt.subplots(figsize=(12, 4))
@@ -279,10 +279,10 @@ class VolatilityApp(QWidget):
         self.ax.xaxis.label.set_color(fg_color)
         self.ax.title.set_color(fg_color)
 
-        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", color='k', alpha=0.6)
-        self.ax.plot(t_display, preds_display, label="Model Prediction", color='firebrick', alpha=0.8)
-        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", color='steelblue', alpha=0.5)
-        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", color='firebrick', alpha=0.8, ls='--')
+        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", lw=1.5, color='k', alpha=0.6)
+        self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8)
+        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5)
+        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--')
         self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon')
 
         self.ax.set_xlabel("Time")
