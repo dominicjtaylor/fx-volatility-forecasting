@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QLabel, QFileDialog, QSlider, QMessageBox
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QSizePolicy
 
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -110,7 +111,9 @@ class VolatilityApp(QWidget):
         layout.addLayout(controls)
 
         self.rmse_label = QLabel("RMSE improvement: N/A")
+        self.rmse_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.mae_label  = QLabel("MAE improvement: N/A")
+        self.mae_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         layout.addWidget(self.rmse_label)
         layout.addWidget(self.mae_label)
 
