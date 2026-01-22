@@ -27,7 +27,7 @@ MODEL_DIR = SCRIPT_DIR / "../results/models"
 EPS = 1e-8
 HORIZON_SECONDS = 60 * 60  # Fixed 60-min horizon
 DEFAULT_CANDLES = 1_000_000
-DEFAULT_DISPLAY_MINUTES = 1440
+DEFAULT_DISPLAY_MINUTES = 2880
 
 # ------------------------------
 # GUI Class
