@@ -240,19 +240,30 @@ class VolatilityApp(QWidget):
         actual_display = self.actual_vol[mask]
 
         if len(actual_display) > 0:
-            rmse_model = np.sqrt(mean_squared_error(actual_display, preds_display))
-            mae_model  = mean_absolute_error(actual_display, preds_display)
-            rmse_base  = np.sqrt(mean_squared_error(actual_display, baseline_display))
-            mae_base   = mean_absolute_error(actual_display, baseline_display)
+            # Mask out NaNs
+            mask_valid = (~np.isnan(actual_display)) & (~np.isnan(preds_display)) & (~np.isnan(baseline_display))
+            if mask_valid.any():
+                actual_valid = actual_display[mask_valid]
+                preds_valid  = preds_display[mask_valid]
+                baseline_valid = baseline_display[mask_valid]
 
-            rmse_improve = 100 * (rmse_base - rmse_model) / rmse_base
-            mae_improve  = 100 * (mae_base - mae_model) / mae_base
+                rmse_model = np.sqrt(mean_squared_error(actual_valid, preds_valid))
+                mae_model  = mean_absolute_error(actual_valid, preds_valid)
+                rmse_base  = np.sqrt(mean_squared_error(actual_valid, baseline_valid))
+                mae_base   = mean_absolute_error(actual_valid, baseline_valid)
 
-            self.rmse_label.setText(f"RMSE improvement vs medium: {rmse_improve:.2f}%")
-            self.mae_label.setText(f"MAE improvement vs medium: {mae_improve:.2f}%")
+                rmse_improve = 100 * (rmse_base - rmse_model) / rmse_base
+                mae_improve  = 100 * (mae_base - mae_model) / mae_base
+
+                self.rmse_label.setText(f"RMSE improvement vs medium: {rmse_improve:.2f}%")
+                self.mae_label.setText(f"MAE improvement vs medium: {mae_improve:.2f}%")
+            else:
+                self.rmse_label.setText("RMSE improvement: N/A")
+                self.mae_label.setText("MAE improvement: N/A")
         else:
             self.rmse_label.setText("RMSE improvement: N/A")
             self.mae_label.setText("MAE improvement: N/A")
+
 
         print("Clear axes")
         self.ax.clear()
