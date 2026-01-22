@@ -141,7 +141,7 @@ class VolatilityApp(QWidget):
     def load_csv(self, path):
         try:
             # Load last 500_000 rows
-            self.df = data.load_candles(path, nrows=DEFAULT_CANDLES)
+            self.df = data.load_last_candles(path, skiprows=range(1,DEFAULT_CANDLES+1))
             # self.df = self.df.iloc[-DEFAULT_CANDLES:]
             self.timestamps = self.df['timestamp']
 
