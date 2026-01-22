@@ -306,19 +306,29 @@ class VolatilityApp(QWidget):
         else:
             actual_color = 'k'
 
-        self.ax.plot(t_display, actual_display, label="Future Realised Volatility", lw=2, color=actual_color, alpha=0.6, zorder=1)
-        self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8, zorder=3)
-        self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5, zorder=2)
-        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
-        self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
+        #To show candle number instead of time
+        x_idx = np.arange(len(t_display))
+        self.ax.plot(x_idx, actual_display, label="Future Realised Volatility", lw=2, color=actual_color, alpha=0.6, zorder=1)
+        self.ax.plot(x_idx, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8, zorder=3)
+        self.ax.plot(x_idx, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5, zorder=2)
+        forecast_idx = np.arange(len(self.t_horizon))
+        self.ax.plot(forecast_idx, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
+        self.ax.axvspan(forecast_idx[0], forecast_idx[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
 
-        # ----------------- Confidence band -----------------
+        # self.ax.plot(t_display, actual_display, label="Future Realised Volatility", lw=2, color=actual_color, alpha=0.6, zorder=1)
+        # self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8, zorder=3)
+        # self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5, zorder=2)
+        # self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
+        # self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
+
         # Use global RMSE as confidence
         upper_conf = preds_display + mae_model_global
         lower_conf = preds_display - mae_model_global
-        self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
+        self.ax.fill_between(x_idx, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
+        # self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
 
-        self.ax.set_xlabel("Time")
+        self.ax.set_xlabel("Candle Index")
+        # self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
         self.ax.legend(loc='lower left',frameon=True)
         self.ax.set_title(f"{self.pair_name}")
