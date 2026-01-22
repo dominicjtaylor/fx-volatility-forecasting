@@ -65,13 +65,6 @@ def evaluate_features(df, horizon_seconds, window_factors, window_scales, lag_sc
 
         results[pair_name] = best_params
 
-        # Save best model
-        os.makedirs('../results/models', exist_ok=True)
-        model_file = f'../results/models/volare_lgb_{currencies}_h{int(horizon_seconds)}_tuned.pkl'
-        with open(model_file, 'wb') as f:
-            pickle.dump(best_model, f)
-        print(f"Saved best model for {pair_name} with params {best_params} to {model_file}")
-
     return results
 
 # ---------------- Single pair training (unchanged) ----------------

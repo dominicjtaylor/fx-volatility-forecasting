@@ -123,17 +123,17 @@ Features used to train the model include:
 
 ![Performance vs Horizon](results/plots/multi_horizon_performance_300000_cand.png)
 
-### Performance vs FX Pair
-
-**Figure:** Model performance relative to a medium-window rolling-volatility baseline across multiple FX pairs, trained on the first 1,000,000 candles using a 60-minute horizon.
-
-Bars show **percentage improvement in RMSE and MAE** over the medium-window baseline. The model outperforms the baseline across the board. This highlights which pairs benefit most and how well the model generalizes across FX pairs.
-
-![Performance vs FX Pair](results/plots/performance_vs_pair.png)
-
 ## Tuned Model Performance on Unseen Data
 
 Once feature hyperparameters are tuned, the model is evaluated on an **unseen test set** of 1,000,000 candles (not included in training) using a 60-minute horizon. This reflects **out-of-sample performance**, showing how well the model generalizes to new data.
+
+### Performance vs FX Pair
+
+**Figure:** Model performance relative to a medium-window rolling-volatility baseline across multiple FX pairs, trained on the first 1,000,000 candles using a 60-minute horizon, with pair-specific tuned hyperparameters.
+
+Bars show **percentage improvement in RMSE and MAE** over the medium-window baseline. The model outperforms the baseline across the board. This highlights which pairs benefit most and how well the model generalizes across FX pairs.
+
+![Performance vs FX Pair](results/plots/tuned_performance_vs_pair.png)
 
 ---
 

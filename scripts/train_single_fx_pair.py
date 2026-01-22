@@ -100,8 +100,9 @@ if __name__ == "__main__":
     HORIZON_SECONDS = 60 * 60
     NROWS = 1_000_000
 
-    best_params_df = pd.read_csv('../results/feature_tuning/best_params.csv')
-    best_params_df.set_index('pair_name', inplace=True)
+    best_params_df = pd.read_csv("../results/feature_tuning/best_params.csv",index_col=0)
+    best_params_df.reset_index(inplace=True)
+    print(best_params_df.head())
 
     # --- Load and prepare data ---
     results = {}
@@ -116,6 +117,7 @@ if __name__ == "__main__":
         base_currency = currencies[:3].upper()
         quote_currency = currencies[3:].upper()
         pair_name = f"{base_currency}-{quote_currency}"
+        print(pair_name)
 
         if pair_name in best_params_df.index:
             params = best_params_df.loc[pair_name]
@@ -164,4 +166,4 @@ if __name__ == "__main__":
     plt.tight_layout()
     os.makedirs('../results/plots', exist_ok=True)
     plt.savefig('../results/plots/performance_vs_pair.png')
-    print("\nSaved bar plot to ../results/plots/performance_vs_pair.png")
+    print("\nSaved bar plot to ../results/plots/tuned_performance_vs_pair.png")
