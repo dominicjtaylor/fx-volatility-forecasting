@@ -115,7 +115,7 @@ class VolatilityApp(QWidget):
         slider_layout.addWidget(self.slider_label)
 
         self.time_slider = QSlider(Qt.Horizontal)
-        self.time_slider.setMinimum(HORIZON_SECONDS * 2)
+        self.time_slider.setMinimum(HORIZON_SECONDS * 2 / 60)
         self.time_slider.setMaximum(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.valueChanged.connect(self.update_plot)
