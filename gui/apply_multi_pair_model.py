@@ -48,6 +48,7 @@ class VolatilityApp(QWidget):
         self.actual_vol = None
         self.t_horizon = None
         self.model_file = None
+        self.pair_name = None
 
         self.dark_mode = self.is_dark_mode()
         self.init_ui()
@@ -108,6 +109,9 @@ class VolatilityApp(QWidget):
             if '-' not in stem:
                 raise ValueError("Cannot parse currency pair from filename")
             currencies = stem.split('-')[1]
+            base_currency = currencies[:3].upper()
+            quote_currency = currencies[3:].upper()
+            self.pair_name = f"{base_currency}-{quote_currency}"
             self.model_file = Path(MODEL_DIR) / f"volare_lgb_{currencies}_h{HORIZON_SECONDS}.pkl"
             print('Using file:',self.model_file)
 
@@ -209,6 +213,7 @@ class VolatilityApp(QWidget):
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
         self.ax.legend(loc='lower left')
+        self.ax.title(f"FX Pair: {self.pair_name}")
         self.fig.tight_layout()
         self.canvas.draw()
 
