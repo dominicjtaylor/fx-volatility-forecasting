@@ -256,10 +256,22 @@ class VolatilityApp(QWidget):
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
         print('Get timestamps')
-        t_display = self.timestamps.iloc[self.df_clean.index][mask]
-        preds_display = self.preds[mask]
-        baseline_display = self.medium_baseline[mask]
-        actual_display = self.actual_vol[mask]
+        #Show time
+        # t_display = self.timestamps.iloc[self.df_clean.index][mask]
+        # preds_display = self.preds[mask]
+        # baseline_display = self.medium_baseline[mask]
+        # actual_display = self.actual_vol[mask]
+
+        #Show candle index
+        t_window = self.timestamps.iloc[self.df_clean.index][mask]
+        preds_window = self.preds[mask]
+        baseline_window = self.medium_baseline[mask]
+        actual_window = self.actual_vol[mask]
+        sort_idx = np.argsort(t_window)
+        t_display = t_window.iloc[sort_idx]
+        preds_display = preds_window[sort_idx]
+        baseline_display = baseline_window[sort_idx]
+        actual_display = actual_window[sort_idx]
 
         # ----------------- Compute global metrics -----------------
         if len(self.actual_vol) > 0:
@@ -331,7 +343,6 @@ class VolatilityApp(QWidget):
 
         #Show candle number
         self.ax.set_xlabel("Candle Index")
-        self.ax.invert_xaxis()
 
         #Show time
         # self.ax.set_xlabel("Time")
