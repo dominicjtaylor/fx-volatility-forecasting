@@ -213,7 +213,7 @@ class VolatilityApp(QWidget):
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Log Volatility")
         self.ax.legend(loc='lower left')
-        self.ax.title(f"FX Pair: {self.pair_name}")
+        self.ax.set_title(f"FX Pair: {self.pair_name}")
         self.fig.tight_layout()
         self.canvas.draw()
 
