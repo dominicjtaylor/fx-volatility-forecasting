@@ -236,6 +236,8 @@ class VolatilityApp(QWidget):
 
         print("Clear axes")
         self.ax.clear()
+        for spine in self.ax.spines.values():
+            spine.set_visible(True)
         bg_color = "#222222" if self.dark_mode else "white"
         fg_color = "white" if self.dark_mode else "black"
         self.fig.patch.set_facecolor(bg_color)
