@@ -27,7 +27,7 @@ MODEL_DIR = SCRIPT_DIR / "../results/models"
 EPS = 1e-8
 HORIZON_SECONDS = 60 * 60  # Fixed 60-min horizon
 DEFAULT_CANDLES = 1_000_000
-DEFAULT_DISPLAY_MINUTES = 2880
+DEFAULT_DISPLAY_MINUTES = 4320
 
 # ------------------------------
 # GUI Class
@@ -53,6 +53,33 @@ class VolatilityApp(QWidget):
         self.dark_mode = self.is_dark_mode()
         self.init_ui()
 
+    def show_drop_placeholder(self):
+        self.ax.clear()
+        self.ax.set_visible(True)
+
+        bg_color = "#222222" if self.dark_mode else "white"
+        fg_color = "white" if self.dark_mode else "black"
+
+        self.fig.patch.set_facecolor(bg_color)
+        self.ax.set_facecolor(bg_color)
+
+        self.ax.text(
+            0.5, 0.5,
+            "Drag and drop a CSV file\nor click “Load CSV”",
+            ha="center", va="center",
+            fontsize=14,
+            color=fg_color,
+            alpha=0.6,
+            transform=self.ax.transAxes
+        )
+
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        for spine in self.ax.spines.values():
+            spine.set_visible(False)
+
+        self.canvas.draw()
+
     def init_ui(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -62,6 +89,7 @@ class VolatilityApp(QWidget):
         self.load_btn = QPushButton("Load CSV")
         self.load_btn.clicked.connect(self.load_csv_file)
         controls.addWidget(self.load_btn)
+        self.setAcceptDrops(True)
 
         self.export_btn = QPushButton("Export Predictions")
         self.export_btn.setEnabled(False)
@@ -75,7 +103,7 @@ class VolatilityApp(QWidget):
         slider_layout.addWidget(self.slider_label)
 
         self.time_slider = QSlider(Qt.Horizontal)
-        self.time_slider.setMinimum(1)
+        self.time_slider.setMinimum(HORIZON_SECONDS * 2)
         self.time_slider.setMaximum(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.setValue(DEFAULT_DISPLAY_MINUTES)
         self.time_slider.valueChanged.connect(self.update_plot)
@@ -84,7 +112,8 @@ class VolatilityApp(QWidget):
 
         # ---------------- Plot ----------------
         self.fig, self.ax = plt.subplots(figsize=(12, 4))
-        self.ax.set_visible(False)
+        # self.ax.set_visible(False)
+        self.show_drop_placeholder()
         self.canvas = FigureCanvas(self.fig)
         layout.addWidget(self.canvas)
 
