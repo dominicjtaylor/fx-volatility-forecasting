@@ -174,12 +174,12 @@ class VolatilityApp(QWidget):
             self.model = pickle.load(f)
 
         horizon_seconds = HORIZON_SECONDS
-        k, alpha = 8, 1
+        window_factor, window_scale, lag_scale = 8, 0.75, 1
 
         df = self.df.copy()
         df = features.compute_log_return(df)
-        df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, k=k)
-        df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, alpha=alpha, k=k)
+        df = features.compute_rolling_volatility(df, horizon_seconds=horizon_seconds, window_scale=window_scale, window_factor=window_factor)
+        df = features.compute_lagged_rolling_volatility(df, horizon_seconds=horizon_seconds, lag_scale=lag_scale, window_factor=window_factor)
         df = features.compute_multi_window_rolling_vol(df, horizon_seconds=horizon_seconds)
         df = features.compute_intraday_seasonality(df)
         df = features.compute_volatility_slope(df, horizon_seconds=horizon_seconds)
