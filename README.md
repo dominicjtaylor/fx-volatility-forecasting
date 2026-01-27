@@ -1,59 +1,33 @@
 # volare: FX Volatility Forecasting with Machine Learning
 
-This project forecasts FX spot volatility using **LightGBM**, a gradient boosting machine learning model, trained on high-frequency candle data in Python.  
-It demonstrates a complete workflow of feature engineering, model training, validation, and forecasting, with practical applications for liquidity providers and FX traders.
+This project investigates whether short-horizon **FX spot volatility** contains forecastable structure beyond simple historical smoothing.  
+Using high-frequency candle data, it implements a **LightGBM-based volatility forecasting pipeline** with strict chronological validation, baseline comparisons, and explicit attention to **regime robustness**.
+
+> The goal is **not** to claim tradable “alpha”, but to assess when and why ML forecasts add value over rolling volatility estimators, and where they fail.
 
 ---
 
-## Workflow
+## Problem & Motivation
 
-The pipeline consists of:
+Short- to medium-term FX volatility forecasts are central to:
 
-- **Data ingestion** (`data.py`): load candle data in CSV format  
-- **Feature generation** (`features.py`): log returns, high-low ranges, rolling volatility, multi-window rolling volatilities, volatility slope, z-score, and acceleration  
-- **Train/test split**: chronological split to respect time dependencies  
-- **Model training** (`model.py`): **LightGBM** trained on engineered features with optimal fitting  
-- **Model validation**: RMSE, MAE, and visual inspection of predictions  
-- **Forecasting** (`predict.py`): generate short- to medium-term volatility forecasts on new data  
-- **Visualisation** (`visualisation.py` and GUI): plots and performance metrics, with interactive forecast exploration  
-
----
-
-## Features
-
-- Customisable forecast horizons (e.g., 10–60 minutes)  
-- Multi-window rolling volatility features (short, medium, long windows)  
-- Volatility-of-volatility, slope, and acceleration features  
-- Chronological train/test split and optional walk-forward validation  
-- Model persistence: save and reload **LightGBM** models for downstream use  
-
-> **Caution:** Features are currently tuned for short horizons (~1 hour). Longer horizons may require re-tuning windows or adding features capturing slower volatility dynamics.
-
----
-
-## Motivation
-
-Short- to medium-term FX volatility forecasts are critical for:  
-
-- Managing risk and setting spreads  
+- Risk management and setting spreads  
 - Optimising liquidity provision  
 - Supporting quantitative trading strategies  
 
-By forecasting volatility directly rather than prices, this project highlights actionable insights for trading and risk teams.
+By forecasting volatility directly rather than prices, this project demonstrates how machine learning can highlight actionable signals while respecting the limits of high-frequency FX data.
 
 ---
 
-## Data
+## Validation & Assumptions
 
-This repository does not include raw FX data.
+- All splits are **chronological**; random cross-validation is avoided due to temporal dependencies  
+- Model performance is benchmarked against simple rolling-volatility baselines (short, medium, long windows)  
+- **Out-of-sample performance** is reported where possible  
+- Performance varies across horizons, FX pairs, and volatility regimes; short horizons show limited or sometimes negative gains  
+- Results should be interpreted **relative to baselines**, not in absolute terms  
 
-To run the pipeline, users must provide historical FX candle data formatted consistently with the training setup:
-
-- Fixed time-resolution candles (e.g., 10-second intervals)  
-- Columns: `timestamp`, `open`, `high`, `low`, `close`  
-- Continuous time series without gaps  
-
-Applying the model to differently formatted data requires retraining or feature redefinition.
+> Explicitly identifying model failure points strengthens trust in the approach.
 
 ---
 
@@ -62,14 +36,38 @@ Applying the model to differently formatted data requires retraining or feature 
 1. Compute features and target from candle data  
 2. Chronological train-test split  
 3. Train **LightGBM** on engineered features  
-4. Compare **LightGBM** model to simple baselines:  
-   - **Short-window rolling volatility:** recent backward-looking volatility  
-   - **Medium-window rolling volatility:** intra-hour trends  
-   - **Long-window rolling volatility:** longer-term trends  
+4. Compare **LightGBM** forecasts to rolling-volatility baselines:  
+   - Short-window: recent backward-looking volatility  
+   - Medium-window: intra-hour trends  
+   - Long-window: slower trends  
 5. Evaluate with RMSE, MAE, and visual inspection  
-6. Optionally, retrain the model on the full training data using the **optimal number of iterations** for improved performance  
+6. Optionally, retrain the model on the full training data using the **optimal number of iterations**  
 
-> **Interactive GUI:** Allows users to load CSVs, visualize predicted vs actual volatility, compare forecasts with baselines, and export results. Forecast improvements are displayed for the selected horizon.
+> **Interactive GUI:** Allows loading CSVs, visualising predicted vs actual volatility, comparing forecasts with baselines, and exporting results. Improvements are displayed for the selected horizon.
+
+---
+
+## Workflow
+
+The code pipeline consists of:
+
+- **Data ingestion** (`data.py`)  
+- **Feature generation** (`features.py`): log returns, high-low ranges, rolling volatility, multi-window volatilities, slope, z-score, acceleration  
+- **Model training** (`model.py`)  
+- **Forecasting** (`predict.py`)  
+- **Visualization** (`visualisation.py` and GUI)  
+
+---
+
+## Features
+
+- Customisable forecast horizons (e.g., 10–60 minutes)  
+- Multi-window rolling volatility features  
+- Volatility-of-volatility, slope, and acceleration features  
+- Chronological train/test split and optional walk-forward validation  
+- Model persistence: save and reload **LightGBM** models for downstream use  
+
+> **Caution:** Features are currently tuned for short horizons (~1 hour). Longer horizons may require re-tuning windows or adding features capturing slower volatility dynamics.
 
 ---
 
@@ -78,6 +76,7 @@ Applying the model to differently formatted data requires retraining or feature 
 ### Within-Sample Performance
 
 The figures below show **within-sample performance** on the training data (first 800,000 candles of a single FX pair).  
+
 > These results indicate how well the model learns historical patterns and **do not represent out-of-sample performance**.
 
 **Features used:** past rolling volatility, lagged rolling volatility, multi-window rolling volatility, intra-day seasonality, volatility slope, z-score, acceleration.
