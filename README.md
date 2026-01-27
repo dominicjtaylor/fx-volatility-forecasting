@@ -35,13 +35,13 @@ By forecasting volatility directly rather than prices, this project demonstrates
 
 1. Compute features and target from candle data  
 2. Chronological train-test split  
-3. Train **LightGBM** on engineered features  
-4. Compare **LightGBM** forecasts to rolling-volatility baselines:  
+3. Train **LightGBM** on engineered features using the training set  
+4. Retrain the model on **training + validation data using the optimal number of iterations** to optimise performance  
+5. Compare **LightGBM** forecasts to rolling-volatility baselines:  
    - Short-window: recent backward-looking volatility  
    - Medium-window: intra-hour trends  
    - Long-window: slower trends  
-5. Evaluate with RMSE, MAE, and visual inspection  
-6. Optionally, retrain the model on the full training data using the **optimal number of iterations**  
+6. Evaluate with RMSE, MAE, and visual inspection  
 
 > **Interactive GUI:** Allows loading CSVs, visualising predicted vs actual volatility, comparing forecasts with baselines, and exporting results. Improvements are displayed for the selected horizon.
 
