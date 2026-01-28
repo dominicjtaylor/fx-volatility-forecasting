@@ -339,7 +339,7 @@ class VolatilityApp(QWidget):
         self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
 
         self.ax.set_xlabel("Time")
-        self.ax.set_ylabel("Log Volatility Change vs Medium Baseline (%)")
+        self.ax.set_ylabel("Volatility Change vs Medium Baseline (%)")
         self.ax.legend(loc='upper left',frameon=True)
         self.ax.set_title(f"{self.pair_name}")
         self.fig.tight_layout()
@@ -354,9 +354,13 @@ class VolatilityApp(QWidget):
         rmse_uncertainty = rmse_model_global
         mae_uncertainty = mae_model_global
 
+        # self.forecast_label.setText(
+        #     f"Forecast — Model: {model_forecast:.4f} ± RMSE {rmse_uncertainty:.4f} / MAE {mae_uncertainty:.4f}, "
+        #     f"Baseline: {baseline_forecast:.4f}, Improvement: {forecast_improve:.2f}%")
         self.forecast_label.setText(
-            f"Forecast — Model: {model_forecast:.4f} ± RMSE {rmse_uncertainty:.4f} / MAE {mae_uncertainty:.4f}, "
-            f"Baseline: {baseline_forecast:.4f}, Improvement: {forecast_improve:.2f}%")
+            f"Forecasted Volatility Change vs Normal: {self.pred_horizon_pct[-1]:+.2f}% "
+            rf"($\pm$ RMSE {rmse_uncertainty_pct:.2f} / MAE {mae_uncertainty_pct:.2f}%)"
+        )
 
         self.canvas.draw()
 
