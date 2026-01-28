@@ -168,5 +168,5 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     os.makedirs('../results/plots', exist_ok=True)
-    plt.savefig('../results/plots/performance_vs_pair.png')
+    plt.savefig('../results/plots/tuned_performance_vs_pair.png')
     print("\nSaved bar plot to ../results/plots/tuned_performance_vs_pair.png")
