@@ -228,11 +228,12 @@ class VolatilityApp(QWidget):
                             and '_over_' not in c]
         mid_idx = self.feature_cols.index(rolling_cols[len(rolling_cols)//2])
         print('Medium baseline col:',rolling_cols[len(rolling_cols)//2])
-        # self.medium_baseline = np.log(X[:, mid_idx] + EPS)
-        vals = X[:, mid_idx]
-        mask = vals > 0
-        self.medium_baseline = np.full_like(vals, np.nan)
-        self.medium_baseline[mask] = np.log(vals[mask])
+        EPS = 1e-8
+        self.medium_baseline = np.log(X[:, mid_idx] + EPS)
+        # vals = X[:, mid_idx]
+        # mask = vals > 0
+        # self.medium_baseline = np.full_like(vals, np.nan)
+        # self.medium_baseline[mask] = np.log(vals[mask])
 
         # Actual volatility
         # self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
