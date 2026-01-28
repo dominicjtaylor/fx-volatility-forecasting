@@ -353,6 +353,8 @@ class VolatilityApp(QWidget):
         forecast_improve = 100 * (baseline_forecast - model_forecast) / baseline_forecast
         rmse_uncertainty = rmse_model_global
         mae_uncertainty = mae_model_global
+        rmse_uncertainty_pct = 100 * rmse_uncertainty / baseline_forecast
+        mae_uncertainty_pct  = 100 * mae_uncertainty  / baseline_forecast
 
         # self.forecast_label.setText(
         #     f"Forecast — Model: {model_forecast:.4f} ± RMSE {rmse_uncertainty:.4f} / MAE {mae_uncertainty:.4f}, "
