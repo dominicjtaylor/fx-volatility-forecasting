@@ -223,9 +223,13 @@ class VolatilityApp(QWidget):
         rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c]
         mid_idx = self.feature_cols.index(rolling_cols[len(rolling_cols)//2])
         # self.medium_baseline = np.log(X[:, mid_idx] + EPS)
+        print('Calculate medium baseline')
         vals = X[:, mid_idx]
+        print('Create baseline mask')
         mask = vals > 0
+        print('Change all negative vals to nan')
         self.baseline_medium = np.full_like(vals, np.nan)
+        print('Compute log medium baseline')
         self.baseline_medium[mask] = np.log(vals[mask])
 
         # Actual volatility
@@ -260,6 +264,7 @@ class VolatilityApp(QWidget):
         t_start = t_end - pd.Timedelta(seconds=seconds)
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
+        print('Get relevant times for display')
         t_display = self.timestamps.iloc[self.df_clean.index][mask]
         preds_display = self.preds[mask]
         baseline_display = self.medium_baseline[mask]
