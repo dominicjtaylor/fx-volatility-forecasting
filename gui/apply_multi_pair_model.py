@@ -220,7 +220,12 @@ class VolatilityApp(QWidget):
         self.preds = self.model.predict(X)
 
         # Medium-window baseline
-        rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c and not c.endswith('_slope')]
+        # rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c and not c.endswith('_slope')]
+        rolling_cols = [c for c in self.feature_cols
+                            if 'rolling_vol_' in c
+                            and '_cand' in c
+                            and '_slope' not in c
+                            and '_over_' not in c]
         mid_idx = self.feature_cols.index(rolling_cols[len(rolling_cols)//2])
         print('Medium baseline col:',rolling_cols[len(rolling_cols)//2])
         # self.medium_baseline = np.log(X[:, mid_idx] + EPS)
