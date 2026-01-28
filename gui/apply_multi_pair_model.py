@@ -266,7 +266,9 @@ class VolatilityApp(QWidget):
 
         print('Get relevant times for display')
         t_display = self.timestamps.iloc[self.df_clean.index][mask]
+        print('Model display')
         preds_display = self.preds[mask]
+        print('Baseline display')
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
 
