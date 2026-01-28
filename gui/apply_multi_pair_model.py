@@ -271,12 +271,14 @@ class VolatilityApp(QWidget):
         actual_display = self.actual_vol[mask]
 
         # ----------------- Compute global metrics -----------------
+        print('Compute metrics')
         if len(self.actual_vol) > 0:
             # Mask out NaNs globally
             mask_valid_global = (~np.isnan(self.actual_vol)) & (~np.isnan(self.preds)) & (~np.isnan(self.medium_baseline))
             if mask_valid_global.any():
                 actual_global = self.actual_vol[mask_valid_global]
                 preds_global  = self.preds[mask_valid_global]
+                print('global baseline')
                 baseline_global = self.medium_baseline[mask_valid_global]
 
                 # Global RMSE/MAE
