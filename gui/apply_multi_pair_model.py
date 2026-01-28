@@ -241,14 +241,17 @@ class VolatilityApp(QWidget):
         pred_future[0] = self.preds[-1]
         self.pred_horizon = pred_future
 
-        # Normalised log vol as % change from medium baseline
-        self.actual_vol_pct = 100 * (self.actual_vol - self.medium_baseline) / self.medium_baseline
-        self.preds_pct = 100 * (self.preds - self.medium_baseline) / self.medium_baseline
-        self.baseline_pct = 100 * (self.medium_baseline - self.medium_baseline) / self.medium_baseline # will be zeros
+        # Convert back from log to linear volatility
+        actual_vol_lin = np.exp(self.actual_vol)
+        preds_lin      = np.exp(self.preds)
+        baseline_lin   = np.exp(self.medium_baseline)
 
-        baseline_last = self.medium_baseline[-1]
-        self.pred_horizon_pct = 100 * (self.pred_horizon - baseline_last) / baseline_last
-        self.baseline_forecast_pct = np.zeros_like(self.pred_horizon) # baseline is reference
+        self.actual_vol_pct      = 100 * (actual_vol_lin - baseline_lin) / baseline_lin
+        self.preds_pct           = 100 * (preds_lin - baseline_lin) / baseline_lin
+        self.baseline_pct        = np.zeros_like(baseline_lin)  # baseline is reference
+        baseline_last_lin        = baseline_lin[-1]
+        self.pred_horizon_pct    = 100 * (np.exp(self.pred_horizon) - baseline_last_lin) / baseline_last_lin
+        self.baseline_forecast_pct = np.zeros_like(self.pred_horizon)  # baseline is reference
 
         self.export_btn.setEnabled(True)
         self.export_plot_btn.setEnabled(True)
@@ -336,7 +339,7 @@ class VolatilityApp(QWidget):
         self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
 
         self.ax.set_xlabel("Time")
-        self.ax.set_ylabel("Log Volatility")
+        self.ax.set_ylabel("Log Volatility Change vs Medium Baseline (%)")
         self.ax.legend(loc='lower left',frameon=True)
         self.ax.set_title(f"{self.pair_name}")
         self.fig.tight_layout()
