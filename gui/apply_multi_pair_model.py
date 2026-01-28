@@ -220,16 +220,12 @@ class VolatilityApp(QWidget):
         self.preds = self.model.predict(X)
 
         # Medium-window baseline
-        rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c]
+        rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c and not c.endswith('_slope')]
         mid_idx = self.feature_cols.index(rolling_cols[len(rolling_cols)//2])
         # self.medium_baseline = np.log(X[:, mid_idx] + EPS)
-        print('Calculate medium baseline')
         vals = X[:, mid_idx]
-        print('Create baseline mask')
         mask = vals > 0
-        print('Change all negative vals to nan')
         self.medium_baseline = np.full_like(vals, np.nan)
-        print('Compute log medium baseline')
         self.medium_baseline[mask] = np.log(vals[mask])
 
         # Actual volatility
@@ -264,23 +260,18 @@ class VolatilityApp(QWidget):
         t_start = t_end - pd.Timedelta(seconds=seconds)
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
-        print('Get relevant times for display')
         t_display = self.timestamps.iloc[self.df_clean.index][mask]
-        print('Model display')
         preds_display = self.preds[mask]
-        print('Baseline display')
         baseline_display = self.medium_baseline[mask]
         actual_display = self.actual_vol[mask]
 
         # ----------------- Compute global metrics -----------------
-        print('Compute metrics')
         if len(self.actual_vol) > 0:
             # Mask out NaNs globally
             mask_valid_global = (~np.isnan(self.actual_vol)) & (~np.isnan(self.preds)) & (~np.isnan(self.medium_baseline))
             if mask_valid_global.any():
                 actual_global = self.actual_vol[mask_valid_global]
                 preds_global  = self.preds[mask_valid_global]
-                print('global baseline')
                 baseline_global = self.medium_baseline[mask_valid_global]
 
                 # Global RMSE/MAE

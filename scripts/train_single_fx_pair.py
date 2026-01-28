@@ -75,7 +75,7 @@ def train_single_pair(df, horizon_seconds, window_factor, window_scale, lag_scal
 
     y_pred = model_final.predict(X_test)
     eps = 1e-8
-    rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
+    rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c and not c.endswith('_slope')]
     vals = X_test[:, feature_cols.index(rolling_cols[len(rolling_cols)//2])]
     # vals = np.clip(vals, 1e-8, None)
     # baseline_medium = np.log(vals)
