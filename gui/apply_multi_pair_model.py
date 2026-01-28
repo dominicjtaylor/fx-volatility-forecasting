@@ -134,7 +134,7 @@ class VolatilityApp(QWidget):
         layout.addWidget(self.rmse_label)
         layout.addWidget(self.mae_label)
 
-        self.forecast_label = QLabel("Model Forecast: N/A")
+        self.forecast_label = QLabel("Forecasted Volatility Change vs Normal: N/A")
         self.forecast_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         layout.addWidget(self.forecast_label)        
 
