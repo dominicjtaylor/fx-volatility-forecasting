@@ -223,7 +223,7 @@ class VolatilityApp(QWidget):
         rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c]
         mid_idx = self.feature_cols.index(rolling_cols[len(rolling_cols)//2])
         # self.medium_baseline = np.log(X[:, mid_idx] + EPS)
-        vals = X_test[:, mid_idx]
+        vals = X[:, mid_idx]
         mask = vals > 0
         self.baseline_medium = np.full_like(vals, np.nan)
         self.baseline_medium[mask] = np.log(vals[mask])
