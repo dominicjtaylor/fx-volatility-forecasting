@@ -228,9 +228,9 @@ class VolatilityApp(QWidget):
         print('Create baseline mask')
         mask = vals > 0
         print('Change all negative vals to nan')
-        self.baseline_medium = np.full_like(vals, np.nan)
+        self.medium_baseline = np.full_like(vals, np.nan)
         print('Compute log medium baseline')
-        self.baseline_medium[mask] = np.log(vals[mask])
+        self.medium_baseline[mask] = np.log(vals[mask])
 
         # Actual volatility
         # self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
