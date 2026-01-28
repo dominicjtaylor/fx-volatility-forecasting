@@ -220,7 +220,6 @@ class VolatilityApp(QWidget):
         self.preds = self.model.predict(X)
 
         # Medium-window baseline
-        # rolling_cols = [c for c in self.feature_cols if 'rolling_vol_' in c and 'cand' in c and not c.endswith('_slope')]
         rolling_cols = [c for c in self.feature_cols
                             if 'rolling_vol_' in c
                             and '_cand' in c
@@ -230,13 +229,8 @@ class VolatilityApp(QWidget):
         print('Medium baseline col:',rolling_cols[len(rolling_cols)//2])
         EPS = 1e-8
         self.medium_baseline = np.log(X[:, mid_idx] + EPS)
-        # vals = X[:, mid_idx]
-        # mask = vals > 0
-        # self.medium_baseline = np.full_like(vals, np.nan)
-        # self.medium_baseline[mask] = np.log(vals[mask])
 
         # Actual volatility
-        # self.actual_vol = np.log(df.loc[self.df_clean.index, 'rolling_vol'].values + EPS)
         self.actual_vol = df.loc[self.df_clean.index, 'rolling_log_future_vol'].values
 
         # Simulate forecast horizon
@@ -246,6 +240,15 @@ class VolatilityApp(QWidget):
         pred_future = self.model.predict(X_future)
         pred_future[0] = self.preds[-1]
         self.pred_horizon = pred_future
+
+        # Normalised log vol as % change from medium baseline
+        self.actual_vol_pct = 100 * (self.actual_vol - self.medium_baseline) / self.medium_baseline
+        self.preds_pct = 100 * (self.preds - self.medium_baseline) / self.medium_baseline
+        self.baseline_pct = 100 * (self.medium_baseline - self.medium_baseline) / self.medium_baseline # will be zeros
+
+        baseline_last = self.medium_baseline[-1]
+        self.pred_horizon_pct = 100 * (self.pred_horizon - baseline_last) / baseline_last
+        self.baseline_forecast_pct = np.zeros_like(self.pred_horizon) # baseline is reference
 
         self.export_btn.setEnabled(True)
         self.export_plot_btn.setEnabled(True)
@@ -268,9 +271,9 @@ class VolatilityApp(QWidget):
         mask = (self.timestamps.iloc[self.df_clean.index] >= t_start) & (self.timestamps.iloc[self.df_clean.index] <= t_end)
 
         t_display = self.timestamps.iloc[self.df_clean.index][mask]
-        preds_display = self.preds[mask]
-        baseline_display = self.medium_baseline[mask]
-        actual_display = self.actual_vol[mask]
+        preds_display = self.preds_pct[mask]
+        baseline_display = self.baseline_pct[mask]
+        actual_display = self.actual_vol_pct[mask]
 
         # ----------------- Compute global metrics -----------------
         if len(self.actual_vol) > 0:
@@ -319,9 +322,12 @@ class VolatilityApp(QWidget):
         self.ax.plot(t_display, actual_display, label="Future Realised Volatility", lw=2, color=actual_color, alpha=0.6, zorder=1)
         self.ax.plot(t_display, preds_display, label="Model Prediction", lw=1, color='firebrick', alpha=0.8, zorder=3)
         self.ax.plot(t_display, baseline_display, label="Medium-window Baseline", lw=1, color='steelblue', alpha=0.5, zorder=2)
-        self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
-        baseline_forecast = np.full(len(self.pred_horizon), self.medium_baseline[-1])
-        self.ax.plot(self.t_horizon, baseline_forecast, label="Baseline Forecast", lw=1, color='steelblue', alpha=0.5, ls='--', zorder=2)
+        # self.ax.plot(self.t_horizon, self.pred_horizon, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
+        # baseline_forecast = np.full(len(self.pred_horizon), self.medium_baseline[-1])
+        # self.ax.plot(self.t_horizon, baseline_forecast, label="Baseline Forecast", lw=1, color='steelblue', alpha=0.5, ls='--', zorder=2)
+        # self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
+        self.ax.plot(self.t_horizon, self.pred_horizon_pct, label="Model Forecast", lw=1, color='firebrick', alpha=0.8, ls='--', zorder=3)
+        self.ax.plot(self.t_horizon, self.baseline_forecast_pct, label="Baseline Forecast", lw=1, color='steelblue', alpha=0.5, ls='--', zorder=2)
         self.ax.axvspan(self.t_horizon[0], self.t_horizon[-1], color='orange', alpha=0.2, label='Forecast Horizon', zorder=3)
 
         # Use global RMSE as confidence
