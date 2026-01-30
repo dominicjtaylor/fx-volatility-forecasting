@@ -1,6 +1,7 @@
 # volare: FX Volatility Forecasting with Machine Learning
 
-This project investigates whether short-horizon **FX spot volatility** contains forecastable structure beyond simple historical smoothing.  
+This project investigates whether short-horizon **FX spot volatility** contains forecastable structure beyond simple historical smoothing.
+
 Using high-frequency candle data, it implements a **LightGBM-based volatility forecasting pipeline** with strict chronological validation, explicit baseline comparisons, and careful attention to **regime robustness and interpretability**.
 
 > The goal is **not** to claim tradable “alpha”, but to quantify *when*, *how*, and *by how much* machine-learning forecasts differ from standard rolling-volatility estimates — and where they fail.
