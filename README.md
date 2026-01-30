@@ -115,23 +115,26 @@ Residuals highlight regime changes and periods where the model under- or over-re
 
 ![Performance vs Horizon](results/plots/multi_horizon_performance_300000_cand.png)
 
-- Very short horizons often show limited gains  
-- Medium horizons can capture stronger deviations from rolling-volatility estimates  
+- Very short horizons often show limited or negative gains  
+- Medium horizons show the most consistent deviations from rolling-volatility estimates  
+- This motivates fixing the forecast horizon before broader model reuse  
 
 ---
 
-### Out-of-Sample / Unseen Data
+## Hyperparameter Tuning (In-Sample)
 
-To assess generalisation, trained models are applied to **chronologically later, unseen datasets** that were not used during feature tuning or model fitting.
+Before training models on large, multi-pair datasets, **hyperparameters are tuned using in-sample data only**.
 
-![Performance vs FX Pair](results/plots/tuned_performance_vs_pair.png)
+This step is deliberately isolated and occurs **prior to any multi-pair training** so that:
+
+- Hyperparameters are **fixed once**  
+- No information from later data or other FX pairs leaks into tuning  
+- The resulting model can be safely reused on **user-supplied candle data**, including via the interactive GUI  
+
+![Tuned Performance vs FX Pair (In-Sample)](results/plots/tuned_performance_vs_pair.png)
 
 - Shows **percentage improvement in RMSE and MAE** relative to the medium-window rolling volatility baseline  
-- Evaluation is performed using the same feature pipeline and forecast horizon as in training  
-- Results vary across FX pairs, reflecting differences in liquidity, regime structure, and microstructure effects  
-- Highlights where machine-learning forecasts provide consistent gains over historical smoothing, and where they do not  
-
-This analysis demonstrates the model’s ability to transfer learned volatility structure beyond a single dataset, while making clear that improvements are **context-dependent rather than universal**.
+- Evaluation is strictly within-sample, highlighting where tuning improves forecasts across FX pairs before any unseen data is introduced
 
 ---
 
@@ -185,8 +188,6 @@ preds = lgb_model.predict(X_test)
 
 ### Interactive GUI
 
-![Applied Model](results/plots/applied_model.png)
-
 To explore forecasts interactively:
 
 1. Navigate to the `gui` folder:
@@ -200,3 +201,5 @@ cd gui
 ```bash
 python apply_multi_pair_model.py
 ```
+
+This allows applying trained models to new CSV data, computing realised volatility, model predictions, and baseline comparisons.

@@ -105,9 +105,14 @@ def train_single_pair(df, horizon_seconds, window_scale=0.75, window_factor=8, l
 
     y_pred = model_final.predict(X_test)
     eps = 1e-8
-    rolling_cols = [c for c in feature_cols if 'rolling_vol_' in c and 'cand' in c]
+    rolling_cols = [c for c in feature_cols
+                        if 'rolling_vol_' in c
+                        and '_cand' in c
+                        and '_slope' not in c
+                        and '_over_' not in c]
     col_idx = feature_cols.index(rolling_cols[len(rolling_cols)//2])
-    baseline_medium = np.log(np.clip(X_test[:, col_idx], eps, None))
+    baseline_medium = np.log(X_test[:, feature_cols.index(rolling_cols[len(rolling_cols)//2])] + eps)
+    # baseline_medium = np.log(np.clip(X_test[:, col_idx], eps, None))
     # baseline_medium = np.log(X_test[:, feature_cols.index(rolling_cols[len(rolling_cols)//2])] + eps)
 
     rmse_model = np.sqrt(mean_squared_error(y_test, y_pred))
@@ -130,9 +135,9 @@ if __name__ == "__main__":
     candle_dir = Path(args.dir)
 
     # --- Feature-level grid ---
-    window_factors = [4, 6, 8]     # e.g., multiples of horizon
-    window_scales  = [0.5, 0.75, 1.0]
-    lag_scales     = [0.5, 1, 2]   # multiplies horizon for lags
+    window_factors = [0.25, 0.5, 1, 2, 4, 8]
+    window_scales  = [1.0]
+    lag_scales = [0.25, 0.5, 1.0]
 
     results = evaluate_features(candle_dir, horizon_seconds=60*60,
                                 window_factors=window_factors,
