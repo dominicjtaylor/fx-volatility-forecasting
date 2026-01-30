@@ -344,7 +344,10 @@ class VolatilityApp(QWidget):
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Volatility Change vs Medium Baseline (%)")
-        self.ax.legend(loc='upper left',frameon=True)
+        # self.ax.legend(loc='upper left',frameon=True)
+        legend_bg = "#222222" if self.dark_mode else "white"
+        legend_fg = "white" if self.dark_mode else "black"
+        self.ax.legend(loc='upper left', frameon=True, facecolor=legend_bg, edgecolor=legend_fg, labelcolor=legend_fg)
         self.ax.set_title(f"{self.pair_name}")
         self.fig.tight_layout()
 
