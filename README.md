@@ -150,6 +150,10 @@ The GUI allows applying trained models to unseen CSV data:
 
 ![Applied Model](results/plots/applied_model.png)
 
+> Dark mode 
+
+![Applied Model Dark](results/plots/applied_model_dark.png)
+
 ---
 
 ## Usage
