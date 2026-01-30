@@ -340,7 +340,7 @@ class VolatilityApp(QWidget):
         lower_conf = preds_display - mae_model_global_pct
         # upper_conf = preds_display + mae_model_global
         # lower_conf = preds_display - mae_model_global
-        self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.1, label="Global RMSE", zorder=2)
+        self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.2, label="Global RMSE", zorder=2)
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Volatility Change vs Medium Baseline (%)")
