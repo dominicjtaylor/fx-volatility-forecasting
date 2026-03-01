@@ -1,0 +1,380 @@
+[
+  {
+    "id": "feat_3fa2a4",
+    "timestamp": "2026-03-01 20:32",
+    "name": "vol_ratio_fast_slow",
+    "hypothesis": "When short-term realised volatility begins to diverge from medium-term realised volatility \u2014 specifically when the ratio of fast-window vol to slow-window vol crosses above a threshold \u2014 this signals a regime transition from calm to elevated volatility (or vice versa when the ratio compresses). Such transitions precede sustained changes in 1-hour forward volatility, as markets reprice risk during structural shifts. The ratio captures the acceleration of vol rather than its level, providing an early-warning signal for regime change that is more timely than level-based vol measures.",
+    "construction": "Using 10s mid-price returns (computed as log(close_t / close_{t-1}) for each 10s bar): (1) Compute fast realised vol as the rolling standard deviation of log returns over the past 60 bars (600 seconds / 10 minutes), annualised by sqrt(6*24*365). (2) Compute slow realised vol as the rolling standard deviation of log returns over the past 360 bars (3600 seconds / 60 minutes), annualised by the same factor. (3) Feature = fast_vol / slow_vol. Apply independently to both EURGBP and GBPUSD. All windows are strictly backward-looking. Clip extreme values at the 99th percentile to prevent distortion during flash events. Compute at every 10s timestamp using only data available at that timestamp.",
+    "rejection_criteria": "Reject if: (1) Out-of-sample RMSE improvement over the 60-minute rolling vol baseline is less than 1% for both currency pairs. (2) Feature importance degrades by more than 40% across consecutive 6-month walk-forward windows (P03). (3) Performance in any single named regime (e.g., COVID crisis March 2020, 2022 inflation regime) is more than 30% worse than the aggregate OOS performance (P01). (4) Predictive power shows monotonic decay across chronological test folds, suggesting the signal has structurally degraded (P06). (5) Correlation with next 3600s realised vol is not statistically significant (p > 0.05) in at least two distinct regimes.",
+    "test_results": {
+      "per_pair": {},
+      "aggregate": {
+        "mean_rmse_improvement_pct": null,
+        "mean_importance_drift_pct": null,
+        "any_monotonic_decay": false,
+        "pairs_tested": [],
+        "errors": [
+          "EURGBP: No implementation found for feature: vol_ratio_fast_slow",
+          "GBPUSD: No implementation found for feature: vol_ratio_fast_slow"
+        ]
+      }
+    },
+    "triggered_principles": [
+      "P01",
+      "P03",
+      "P04",
+      "P06"
+    ],
+    "verdict": "rejected",
+    "summary": "The feature could not be evaluated at all because no implementation was found for vol_ratio_fast_slow on either EURGBP or GBPUSD. This is a hard implementation failure, not a marginal result \u2014 there is literally no evidence to assess, no RMSE improvement, no importance scores, and no regime performance data. Every quantitative rejection criterion is technically triggered by default since no results were produced. The underlying hypothesis is economically coherent and worth revisiting, but a feature that fails to execute cannot be promoted under any standard.",
+    "next_action": "Implement the vol_ratio_fast_slow feature in the feature registry so it can be computed and tested \u2014 verify the function name, module path, and parameter signatures are correctly registered before re-running the full evaluation pipeline."
+  },
+  {
+    "id": "feat_a8e869",
+    "timestamp": "2026-03-01 20:39",
+    "name": "range_expansion_persistence",
+    "hypothesis": "Regime transitions are often preceded by a sustained expansion in intrabar price ranges that persists across multiple consecutive bars \u2014 a signature distinct from isolated volatility spikes. When the ratio of recent short-window true range to a longer baseline true range begins to expand AND this expansion is persistent (i.e., the short/long ratio has been above 1.0 for several consecutive bars), this indicates the market is entering a new volatility regime rather than experiencing a transient spike. This persistence-weighted expansion should forecast elevated realised volatility over the next 3600 seconds because structural regime shifts involve sustained demand/supply imbalances rather than instantaneous price adjustments.",
+    "construction": "1. Compute True Range (TR) for each 10s bar: max(high-low, abs(high-prev_close), abs(low-prev_close)). 2. Compute a short-window smoothed TR using a 30-bar (5-minute) rolling mean. 3. Compute a long-window smoothed TR using a 360-bar (1-hour) rolling mean. 4. Compute the TR ratio: short_tr / long_tr. 5. Compute a persistence score: rolling count of consecutive bars where TR ratio > 1.0, capped at the long window length (360 bars). 6. The feature is: TR_ratio * log1p(persistence_count), which amplifies the ratio signal only when it has been sustained. All windows are strictly backward-looking.",
+    "rejection_criteria": "Reject if: (1) Out-of-sample RMSE improvement over rolling vol baseline is not statistically meaningful (per P04). (2) Feature importance degrades by more than 30% in any single named volatility regime \u2014 particularly if it only activates during COVID crisis and fails in 2022 elevated-vol or post-normalisation periods (per P01). (3) Importance drift across rolling walk-forward windows exceeds 40% (per P03). (4) The feature shows monotonically declining predictive power across chronological test folds (per P06). (5) Any evidence of look-ahead contamination found in implementation review (per P02).",
+    "test_results": {
+      "per_pair": {
+        "EURGBP": {
+          "folds": [
+            {
+              "fold": 1,
+              "rmse_model": 0.048889,
+              "rmse_baseline": 0.060797,
+              "rmse_improvement_pct": 19.588,
+              "feature_target_correlation": 0.1073
+            },
+            {
+              "fold": 2,
+              "rmse_model": 0.079036,
+              "rmse_baseline": 0.090833,
+              "rmse_improvement_pct": 12.988,
+              "feature_target_correlation": 0.0613
+            },
+            {
+              "fold": 3,
+              "rmse_model": 0.04213,
+              "rmse_baseline": 0.055868,
+              "rmse_improvement_pct": 24.59,
+              "feature_target_correlation": 0.1005
+            },
+            {
+              "fold": 4,
+              "rmse_model": 0.02402,
+              "rmse_baseline": 0.027012,
+              "rmse_improvement_pct": 11.076,
+              "feature_target_correlation": 0.2058
+            },
+            {
+              "fold": 5,
+              "rmse_model": 0.022005,
+              "rmse_baseline": 0.023379,
+              "rmse_improvement_pct": 5.879,
+              "feature_target_correlation": 0.1665
+            }
+          ],
+          "overall_rmse_improvement_pct": 14.824,
+          "importance_drift_pct": 112.6,
+          "monotonic_decay": false,
+          "n_folds_completed": 5
+        },
+        "GBPUSD": {
+          "folds": [
+            {
+              "fold": 1,
+              "rmse_model": 0.052697,
+              "rmse_baseline": 0.047596,
+              "rmse_improvement_pct": -10.718,
+              "feature_target_correlation": 0.147
+            },
+            {
+              "fold": 2,
+              "rmse_model": 0.053567,
+              "rmse_baseline": 0.045772,
+              "rmse_improvement_pct": -17.031,
+              "feature_target_correlation": 0.1308
+            },
+            {
+              "fold": 3,
+              "rmse_model": 0.03583,
+              "rmse_baseline": 0.041923,
+              "rmse_improvement_pct": 14.532,
+              "feature_target_correlation": 0.148
+            },
+            {
+              "fold": 4,
+              "rmse_model": 0.034721,
+              "rmse_baseline": 0.037264,
+              "rmse_improvement_pct": 6.823,
+              "feature_target_correlation": 0.1823
+            },
+            {
+              "fold": 5,
+              "rmse_model": 0.03068,
+              "rmse_baseline": 0.031943,
+              "rmse_improvement_pct": 3.952,
+              "feature_target_correlation": 0.1578
+            }
+          ],
+          "overall_rmse_improvement_pct": -0.488,
+          "importance_drift_pct": 33.6,
+          "monotonic_decay": false,
+          "n_folds_completed": 5
+        }
+      },
+      "aggregate": {
+        "mean_rmse_improvement_pct": 7.168,
+        "mean_importance_drift_pct": 73.1,
+        "any_monotonic_decay": false,
+        "pairs_tested": [
+          "EURGBP",
+          "GBPUSD"
+        ],
+        "errors": []
+      }
+    },
+    "triggered_principles": [
+      "P01",
+      "P03",
+      "P04"
+    ],
+    "verdict": "rejected",
+    "summary": "This feature fails on multiple hard rejection criteria and cannot be promoted in its current form. The mean importance drift of 73.1% across all folds far exceeds the 40% threshold, with EURGBP alone showing 112.6% drift \u2014 a clear sign the model is fitting noise rather than a stable signal. More critically, GBPUSD shows an aggregate RMSE deterioration of -0.488%, with the first two folds losing over 10% and 17% respectively, meaning the feature actively harms predictions on one of the two tested pairs. While EURGBP shows encouraging RMSE improvement of 14.8%, a feature that works on one pair but hurts another is not robust \u2014 it is pair-specific, which is a form of regime dependence that violates P01 and P03. The economic hypothesis is coherent and worth preserving, but the implementation produces an unstable, pair-inconsistent signal that fails the stability and generalization bar required for production use.",
+    "next_action": "Investigate why GBPUSD diverges so sharply from EURGBP \u2014 specifically whether the persistence count mechanism is being dominated by microstructure noise on higher-liquidity pairs, and consider replacing the raw consecutive-bar count with a decay-weighted persistence score or testing alternative short/long window ratios to find a more stable parametrization before re-running walk-forward validation across a broader set of pairs."
+  },
+  {
+    "id": "feat_f5a94e",
+    "timestamp": "2026-03-01 20:47",
+    "name": "bid_ask_spread_proxy_vol_pressure",
+    "hypothesis": "The intrabar high-low range relative to the open-close body, measured as a rolling asymmetry ratio, captures latent liquidity stress and order flow imbalance. When the wick-to-body ratio is persistently elevated, market makers are widening effective spreads and price discovery is increasingly uncertain, which precedes elevated realised volatility. Conversely, compressed wick ratios indicate orderly two-way flow and predict calm periods. This proxy for effective spread pressure should be regime-robust because liquidity stress manifests in both crisis and elevated-vol regimes.",
+    "construction": "For each 10-second bar, compute the total wick length as (high - low) minus abs(close - open), which isolates the shadow portions of the candle. Divide by (high - low + epsilon) to normalise, yielding a wick dominance ratio in [0,1]. Then compute the exponentially weighted moving average of this ratio over a 360-bar lookback (60 minutes) with a 180-bar half-life (30 minutes). Subtract the longer-term EWMA over a 2160-bar lookback (6 hours) to produce a mean-deviation signal that captures recent stress relative to the local baseline. This difference is the feature: positive values indicate rising wick dominance (liquidity stress building), negative values indicate compression.",
+    "rejection_criteria": "Reject if: (1) out-of-sample RMSE improvement over rolling vol baseline is absent or negative across any two consecutive regimes; (2) feature importance drift exceeds 40% across walk-forward windows; (3) signal correlation with future realised vol (3600s horizon) degrades monotonically across chronological folds, indicating decay; (4) the signal shows near-zero variance during the 2022 inflation regime, suggesting it fails under persistent directional vol pressure; (5) performance in the COVID March 2020 regime degrades by more than 30% relative to the post-2022 normalisation regime.",
+    "test_results": {
+      "per_pair": {
+        "EURGBP": {
+          "folds": [
+            {
+              "fold": 1,
+              "rmse_model": 0.0492,
+              "rmse_baseline": 0.060797,
+              "rmse_improvement_pct": 19.076,
+              "feature_target_correlation": 0.006
+            },
+            {
+              "fold": 2,
+              "rmse_model": 0.079422,
+              "rmse_baseline": 0.090833,
+              "rmse_improvement_pct": 12.563,
+              "feature_target_correlation": -0.098
+            },
+            {
+              "fold": 3,
+              "rmse_model": 0.042412,
+              "rmse_baseline": 0.055868,
+              "rmse_improvement_pct": 24.085,
+              "feature_target_correlation": -0.0449
+            },
+            {
+              "fold": 4,
+              "rmse_model": 0.024434,
+              "rmse_baseline": 0.027012,
+              "rmse_improvement_pct": 9.542,
+              "feature_target_correlation": 0.1165
+            },
+            {
+              "fold": 5,
+              "rmse_model": 0.022089,
+              "rmse_baseline": 0.023379,
+              "rmse_improvement_pct": 5.517,
+              "feature_target_correlation": 0.1961
+            }
+          ],
+          "overall_rmse_improvement_pct": 14.157,
+          "importance_drift_pct": 206.0,
+          "monotonic_decay": false,
+          "n_folds_completed": 5
+        },
+        "GBPUSD": {
+          "folds": [
+            {
+              "fold": 1,
+              "rmse_model": 0.052026,
+              "rmse_baseline": 0.047596,
+              "rmse_improvement_pct": -9.307,
+              "feature_target_correlation": 0.2492
+            },
+            {
+              "fold": 2,
+              "rmse_model": 0.054235,
+              "rmse_baseline": 0.045772,
+              "rmse_improvement_pct": -18.491,
+              "feature_target_correlation": 0.0288
+            },
+            {
+              "fold": 3,
+              "rmse_model": 0.035637,
+              "rmse_baseline": 0.041923,
+              "rmse_improvement_pct": 14.993,
+              "feature_target_correlation": 0.1804
+            },
+            {
+              "fold": 4,
+              "rmse_model": 0.034586,
+              "rmse_baseline": 0.037264,
+              "rmse_improvement_pct": 7.185,
+              "feature_target_correlation": 0.209
+            },
+            {
+              "fold": 5,
+              "rmse_model": 0.030244,
+              "rmse_baseline": 0.031943,
+              "rmse_improvement_pct": 5.317,
+              "feature_target_correlation": 0.2305
+            }
+          ],
+          "overall_rmse_improvement_pct": -0.061,
+          "importance_drift_pct": 122.7,
+          "monotonic_decay": false,
+          "n_folds_completed": 5
+        }
+      },
+      "aggregate": {
+        "mean_rmse_improvement_pct": 7.048,
+        "mean_importance_drift_pct": 164.3,
+        "any_monotonic_decay": false,
+        "pairs_tested": [
+          "EURGBP",
+          "GBPUSD"
+        ],
+        "errors": []
+      }
+    },
+    "triggered_principles": [
+      "P01",
+      "P03",
+      "P04"
+    ],
+    "verdict": "rejected",
+    "summary": "This feature fails on multiple hard criteria and cannot be promoted in its current form. The most damning result is extreme importance drift of 164% on average across pairs, peaking at 206% for EURGBP, which is more than four times the 40% rejection threshold \u2014 this tells us the model is fitting noise, not a persistent signal. GBPUSD shows essentially zero net RMSE improvement (-0.061%) with two early folds delivering losses of -9.3% and -18.5%, triggering the pre-stated criterion of absent or negative improvement across consecutive regimes. The correlations between the signal and future realised vol are near-zero and inconsistent across folds for both pairs, meaning the feature lacks a stable directional relationship with what it is supposed to predict. The economic rationale is coherent and the signal does not exhibit monotonic decay, but structural instability and cross-pair inconsistency make this unsuitable for production.",
+    "next_action": "Investigate why GBPUSD and EURGBP diverge so sharply \u2014 specifically test whether the wick dominance signal is being dominated by microstructure noise in more liquid pairs (GBPUSD), and consider whether the 10-second bar granularity is too fine for this construction; retest at 1-minute bars with a pair-specific normalisation to assess whether importance drift reduces to an acceptable level before any further evaluation."
+  },
+  {
+    "id": "feat_e3d6b0",
+    "timestamp": "2026-03-01 20:49",
+    "name": "overnight_gap_volatility_anchor",
+    "hypothesis": "The magnitude of the gap between the previous session's close and the current session's open reflects the accumulation of information flow and order imbalance during illiquid periods (Asian session for EURGBP/GBPUSD, or weekend gaps). Large gaps signal latent volatility that tends to persist into the subsequent session as market participants reposition, creating an elevated volatility environment over the forecast horizon. This is a structural microstructure phenomenon: gap closes attract momentum and stop-loss activity, sustaining vol. Conversely, small or zero gaps imply continuity and calmer conditions.",
+    "construction": "Using 10-second OHLC data, identify session boundaries by detecting gaps in the close-to-open return. Specifically: (1) compute the log return from each bar's close to the next bar's open (gap return). (2) Take the absolute value of this gap return as the raw gap signal. (3) To avoid single-bar noise, compute a rolling Z-score of the absolute gap return using a 1-hour backward window (360 bars at 10s) \u2014 normalising by the local mean and standard deviation of recent gap returns. (4) Additionally, smooth with a 5-minute (30-bar) exponential weighted moving average to reduce tick-level noise. The final feature is this smoothed, normalised gap return magnitude, which encodes how anomalous the current gap behaviour is relative to recent history.",
+    "rejection_criteria": "Reject if: (1) Out-of-sample RMSE does not improve over the rolling realised volatility baseline in at least 2 of the 4 named regimes. (2) Feature importance drifts more than 40% across chronological walk-forward folds, suggesting the signal is regime-specific noise. (3) Performance in any single named regime is more than 30% worse than aggregate performance. (4) The feature shows near-zero variance during the COVID crisis regime (March 2020), which would indicate it fails to capture the most extreme volatility episode in the sample. (5) Autocorrelation of the feature drops to near zero within 6 minutes (36 bars), implying it carries no information persistence relevant to the 3600-second forecast horizon.",
+    "test_results": {
+      "per_pair": {
+        "EURGBP": {
+          "folds": [
+            {
+              "fold": 1,
+              "rmse_model": 0.048997,
+              "rmse_baseline": 0.060797,
+              "rmse_improvement_pct": 19.41,
+              "feature_target_correlation": 0.0775
+            },
+            {
+              "fold": 2,
+              "rmse_model": 0.079108,
+              "rmse_baseline": 0.090833,
+              "rmse_improvement_pct": 12.908,
+              "feature_target_correlation": 0.0343
+            },
+            {
+              "fold": 3,
+              "rmse_model": 0.042215,
+              "rmse_baseline": 0.055868,
+              "rmse_improvement_pct": 24.438,
+              "feature_target_correlation": 0.0781
+            },
+            {
+              "fold": 4,
+              "rmse_model": 0.024228,
+              "rmse_baseline": 0.027012,
+              "rmse_improvement_pct": 10.307,
+              "feature_target_correlation": 0.1623
+            },
+            {
+              "fold": 5,
+              "rmse_model": 0.022089,
+              "rmse_baseline": 0.023379,
+              "rmse_improvement_pct": 5.519,
+              "feature_target_correlation": 0.1382
+            }
+          ],
+          "overall_rmse_improvement_pct": 14.516,
+          "importance_drift_pct": 130.5,
+          "monotonic_decay": false,
+          "n_folds_completed": 5
+        },
+        "GBPUSD": {
+          "folds": [
+            {
+              "fold": 1,
+              "rmse_model": 0.052805,
+              "rmse_baseline": 0.047596,
+              "rmse_improvement_pct": -10.944,
+              "feature_target_correlation": 0.1102
+            },
+            {
+              "fold": 2,
+              "rmse_model": 0.05368,
+              "rmse_baseline": 0.045772,
+              "rmse_improvement_pct": -17.277,
+              "feature_target_correlation": 0.0967
+            },
+            {
+              "fold": 3,
+              "rmse_model": 0.035965,
+              "rmse_baseline": 0.041923,
+              "rmse_improvement_pct": 14.211,
+              "feature_target_correlation": 0.1142
+            },
+            {
+              "fold": 4,
+              "rmse_model": 0.034932,
+              "rmse_baseline": 0.037264,
+              "rmse_improvement_pct": 6.257,
+              "feature_target_correlation": 0.1474
+            },
+            {
+              "fold": 5,
+              "rmse_model": 0.030767,
+              "rmse_baseline": 0.031943,
+              "rmse_improvement_pct": 3.679,
+              "feature_target_correlation": 0.1371
+            }
+          ],
+          "overall_rmse_improvement_pct": -0.815,
+          "importance_drift_pct": 41.9,
+          "monotonic_decay": false,
+          "n_folds_completed": 5
+        }
+      },
+      "aggregate": {
+        "mean_rmse_improvement_pct": 6.851,
+        "mean_importance_drift_pct": 86.2,
+        "any_monotonic_decay": false,
+        "pairs_tested": [
+          "EURGBP",
+          "GBPUSD"
+        ],
+        "errors": []
+      }
+    },
+    "triggered_principles": [
+      "P01",
+      "P03",
+      "P04"
+    ],
+    "verdict": "rejected",
+    "summary": "This feature fails on multiple hard rejection criteria and cannot be promoted. Importance drift is catastrophic at 86.2% aggregate and 130.5% for EURGBP alone, far exceeding the 40% threshold \u2014 the model is clearly fitting noise rather than a stable structural signal. GBPUSD shows a negative RMSE improvement of -0.815% overall, with the first two folds losing nearly 11% and 17% respectively against baseline, meaning the feature actively harms prediction on one of the two tested pairs. The pre-stated rejection criterion requiring improvement in at least 2 of 4 named regimes also appears at risk given the pair-level divergence, and the GBPUSD importance drift of 41.9% is itself borderline. The economic rationale is coherent and the EURGBP results are intriguing, but instability of this magnitude is grounds for outright rejection under the stated research principles.",
+    "next_action": "Investigate why the feature works for EURGBP but not GBPUSD by examining whether gap construction is capturing genuine session boundaries for each pair \u2014 GBPUSD may have materially different liquidity patterns that make the gap signal noisy; consider pair-specific normalisation windows or restricting the feature to the Asian-to-London open transition where the microstructure rationale is strongest."
+  }
+]

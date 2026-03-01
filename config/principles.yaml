@@ -1,0 +1,50 @@
+# Research principles — the rules the agent reasons against when issuing verdicts
+# These encode your research philosophy explicitly
+
+principles:
+
+  - id: P01
+    name: "Regime robustness required"
+    description: >
+      A feature must demonstrate predictive stability across at least two distinct
+      volatility regimes. Features that only work in calm or only in crisis conditions
+      are regime-dependent, not robust signals.
+    rejection_trigger: "Performance degrades by more than 30% in any single named regime"
+
+  - id: P02
+    name: "No look-ahead tolerance"
+    description: >
+      Any feature that introduces even marginal look-ahead bias is immediately rejected.
+      All feature windows must be strictly backward-looking relative to the forecast horizon.
+    rejection_trigger: "Feature construction references any data point after the prediction timestamp"
+
+  - id: P03
+    name: "Importance stability required"
+    description: >
+      Feature importance must be stable across rolling walk-forward windows. High drift
+      in importance across windows suggests the model is fitting noise rather than
+      a persistent signal.
+    rejection_trigger: "Importance drift exceeds 40% across rolling windows"
+
+  - id: P04
+    name: "Out-of-sample improvement over baseline"
+    description: >
+      A feature must contribute to measurable out-of-sample improvement over the
+      rolling volatility baseline. In-sample improvement alone is not sufficient.
+    rejection_trigger: "No out-of-sample RMSE improvement over medium-window rolling vol baseline"
+
+  - id: P05
+    name: "Economically motivated construction"
+    description: >
+      Features must have a stated economic or structural rationale. Purely
+      data-mined features without interpretable motivation are deprioritised
+      regardless of in-sample performance.
+    rejection_trigger: "No coherent economic rationale can be stated for the signal"
+
+  - id: P06
+    name: "Signal decay awareness"
+    description: >
+      The agent must explicitly test whether predictive power decays over time.
+      A signal that degrades consistently across the test window is a candidate
+      for rejection even if aggregate performance looks acceptable.
+    rejection_trigger: "Monotonic performance degradation observed across chronological test folds"

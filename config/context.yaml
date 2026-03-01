@@ -1,0 +1,35 @@
+# Data context — defines the environment the agent reasons within
+# Edit these values to match your actual data before running
+
+data:
+  pairs:
+    - EURGBP
+    - GBPUSD
+  frequency: "10s"
+  time_range:
+    start: "2020-01-01"
+    end: "2024-01-01"
+  horizon_seconds: 3600
+
+quality_flags:
+  - "Thin liquidity around major holidays — treat Dec 24–Jan 2 with caution"
+  - "COVID volatility spike March 2020 — known structural anomaly"
+  - "GBP flash crash Oct 2016 — isolated outlier, not regime shift"
+
+known_regimes:
+  - name: "Low volatility"
+    description: "Pre-COVID 2018–2019, compressed ranges, mean-reverting"
+  - name: "Crisis volatility"
+    description: "March 2020 COVID shock, extreme realised vol, non-stationary"
+  - name: "Elevated volatility"
+    description: "2022 inflation/rate cycle, persistent elevated vol with trending structure"
+  - name: "Post-normalisation"
+    description: "2023 onwards, vol compressing but structurally higher than pre-2020"
+
+structural_breaks:
+  - date: "2020-03-15"
+    description: "COVID market dislocation"
+  - date: "2022-02-24"
+    description: "Russia-Ukraine invasion, EUR shock"
+  - date: "2022-09-23"
+    description: "UK mini-budget, GBP flash move"
