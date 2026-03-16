@@ -2,3 +2,10 @@
 name = "fx-volatility-forecasting"
 version = "0.1.0"
 dependencies = []
+
+[project.scripts]
+volare = "src.volare.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

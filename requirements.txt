@@ -6,3 +6,6 @@ seaborn==0.13.2
 scikit-learn==1.6.0
 IPython==8.15.0
 PyQt6==6.10.2
+streamlit>=1.35.0
+anthropic>=0.25.0
+pyyaml>=6.0

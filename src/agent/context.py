@@ -4,6 +4,7 @@ Loads and saves data context and research principles from config files.
 All agent modules read from here rather than directly from disk.
 """
 
+import re
 import yaml
 from pathlib import Path
 
@@ -48,6 +49,10 @@ def format_context_for_prompt(context: dict) -> str:
     end = context["data"]["time_range"]["end"]
     horizon = context["data"]["horizon_seconds"]
 
+    m = re.match(r'(\d+)s', freq)
+    freq_seconds = int(m.group(1)) if m else 10
+    horizon_bars = horizon // freq_seconds
+
     regimes = "\n".join(
         f"  - {r['name']}: {r['description']}"
         for r in context.get("known_regimes", [])
@@ -68,7 +73,7 @@ DATA CONTEXT
 Pairs: {pairs}
 Frequency: {freq}
 Time range: {start} to {end}
-Forecast horizon: {horizon} seconds
+Forecast horizon: {horizon} seconds ({horizon_bars} bars at {freq} resolution)
 
 Known regimes:
 {regimes}

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "high_low_momentum_20bar",
+    "code": "def compute_feature(df):\n    import numpy as np\n    import pandas as pd\n\n    # Compute bar midpoint using high and low to reduce microstructure noise\n    midpoint = (df['high'] + df['low']) / 2.0\n\n    # 20-bar lagged midpoint (strictly backward-looking)\n    window = 20\n    lagged_midpoint = midpoint.shift(window)\n\n    # Guard against zero denominator by clipping\n    lagged_midpoint_safe = lagged_midpoint.where(\n        lagged_midpoint.abs() > 1e-8, other=np.nan\n    )\n\n    # Percentage change from 20 bars ago to current midpoint\n    momentum = (midpoint - lagged_midpoint_safe) / lagged_midpoint_safe.abs()\n\n    # Return series aligned with df index\n    momentum.name = 'high_low_momentum_20bar'\n    return momentum",
+    "level": "primitive"
+  },
+  {
+    "name": "range_persistence_ratio",
+    "code": "def compute_feature(df):\n    import numpy as np\n    import pandas as pd\n\n    window = 180  # 30 minutes at 10s resolution\n\n    # Current bar high-low range\n    hl_range = (df['high'] - df['low']).clip(lower=1e-8)\n\n    # Rolling mean of range over lookback window\n    rolling_mean_range = hl_range.rolling(window, min_periods=1).mean().clip(lower=1e-8)\n\n    # Ratio of current range to rolling mean range\n    ratio = hl_range / rolling_mean_range\n\n    return ratio",
+    "level": "transform"
+  }
+]
