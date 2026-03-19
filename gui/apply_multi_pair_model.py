@@ -127,9 +127,9 @@ class VolatilityApp(QWidget):
         self.export_plot_btn.clicked.connect(self.export_current_plot)
         controls.addWidget(self.export_plot_btn)
 
-        self.rmse_label = QLabel("RMSE improvement vs Baseline: N/A")
+        self.rmse_label = QLabel("RMSE Reduction vs Baseline: N/A")
         self.rmse_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.mae_label  = QLabel("MAE improvement vs Baseline: N/A")
+        self.mae_label  = QLabel("MAE Reduction vs Baseline: N/A")
         self.mae_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         layout.addWidget(self.rmse_label)
         layout.addWidget(self.mae_label)
@@ -296,14 +296,14 @@ class VolatilityApp(QWidget):
                 rmse_improve_global = 100 * (rmse_base_global - rmse_model_global) / rmse_base_global
                 mae_improve_global  = 100 * (mae_base_global - mae_model_global) / mae_base_global
 
-                self.rmse_label.setText(f"RMSE improvement vs Baseline: {rmse_improve_global:.2f}%")
-                self.mae_label.setText(f"MAE improvement vs Baseline: {mae_improve_global:.2f}%")
+                self.rmse_label.setText(f"RMSE Reduction vs Baseline: {rmse_improve_global:.1f}%")
+                self.mae_label.setText(f"MAE Reduction vs Baseline: {mae_improve_global:.1f}%")
             else:
-                self.rmse_label.setText("RMSE improvement vs Baseline: N/A")
-                self.mae_label.setText("MAE improvement vs Baseline: N/A")
+                self.rmse_label.setText("RMSE Reduction vs Baseline: N/A")
+                self.mae_label.setText("MAE Reduction vs Baseline: N/A")
         else:
-            self.rmse_label.setText("RMSE improvement vs Baseline: N/A")
-            self.mae_label.setText("MAE improvement vs Baseline: N/A")
+            self.rmse_label.setText("RMSE Reduction vs Baseline: N/A")
+            self.mae_label.setText("MAE Reduction vs Baseline: N/A")
 
         self.ax.clear()
         for spine in self.ax.spines.values():
@@ -340,7 +340,7 @@ class VolatilityApp(QWidget):
         lower_conf = preds_display - mae_model_global_pct
         # upper_conf = preds_display + mae_model_global
         # lower_conf = preds_display - mae_model_global
-        self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.2, label="Global RMSE", zorder=2)
+        self.ax.fill_between(t_display, lower_conf, upper_conf, color='firebrick', alpha=0.2, label="Global MAE", zorder=2)
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Volatility Change vs Medium Baseline (%)")
@@ -360,15 +360,20 @@ class VolatilityApp(QWidget):
         forecast_improve = 100 * (baseline_forecast - model_forecast) / baseline_forecast
         rmse_uncertainty = rmse_model_global
         mae_uncertainty = mae_model_global
-        rmse_uncertainty_pct = 100 * rmse_uncertainty / baseline_forecast
-        mae_uncertainty_pct  = 100 * mae_uncertainty  / baseline_forecast
+        # rmse_uncertainty_pct = 100 * rmse_uncertainty / baseline_forecast
+        # mae_uncertainty_pct  = 100 * mae_uncertainty  / baseline_forecast
+        rmse_uncertainty_pct = 100 * (np.exp(rmse_uncertainty) - 1)
+        mae_uncertainty_pct  = 100 * (np.exp(mae_uncertainty) - 1)
 
         # self.forecast_label.setText(
         #     f"Forecast — Model: {model_forecast:.4f} ± RMSE {rmse_uncertainty:.4f} / MAE {mae_uncertainty:.4f}, "
         #     f"Baseline: {baseline_forecast:.4f}, Improvement: {forecast_improve:.2f}%")
+        # self.forecast_label.setText(
+        #     f"Forecasted Volatility Change vs Normal: {self.pred_horizon_pct[-1]:+.2f}% "
+        #     rf"(± RMSE {rmse_uncertainty_pct:.2f} / MAE {mae_uncertainty_pct:.2f}%)"
+        # )
         self.forecast_label.setText(
-            f"Forecasted Volatility Change vs Normal: {self.pred_horizon_pct[-1]:+.2f}% "
-            rf"(± RMSE {rmse_uncertainty_pct:.2f} / MAE {mae_uncertainty_pct:.2f}%)"
+            f"Model Forecast vs Baseline (60 min): {self.pred_horizon_pct[-1]:+.2f}%"
         )
 
         self.canvas.draw()

@@ -1,10 +1,12 @@
 # volare: FX Volatility Forecasting with Machine Learning
 
-This project investigates whether short-horizon **FX spot volatility** contains forecastable structure beyond simple historical smoothing.
+This project investigates whether short-horizon **FX spot volatility** contains forecastable structure beyond simple historical volatility estimators (e.g. rolling volatility).
 
 Using high-frequency candle data, it implements a **LightGBM-based volatility forecasting pipeline** with strict chronological validation, explicit baseline comparisons, and careful attention to **regime robustness and interpretability**.
 
 > The goal is **not** to claim tradable “alpha”, but to quantify *when*, *how*, and *by how much* machine-learning forecasts differ from standard rolling-volatility estimates -- and where they fail.
+
+> **Key observation:** The model improves relative error vs rolling-volatility baselines, but gains reduce significantly out-of-sample, indicating partial overfitting alongside genuine structure capture.
 
 ---
 
@@ -23,10 +25,11 @@ Rather than forecasting prices, this project forecasts **realised volatility**, 
 ## Validation & Assumptions
 
 - All splits are **strictly chronological**; random cross-validation is avoided due to temporal dependence  
+- Early stopping and model constraints are used to **mitigate overfitting** and unstable feedback
 - Model performance is benchmarked against **rolling-volatility baselines** (short, medium, long windows)  
 - Reported metrics are **relative to baselines**, not absolute error claims  
 - Performance varies across horizons, FX pairs, and volatility regimes  
-- Short horizons can show **marginal or negative improvements**, particularly during rapid regime shifts  
+- Short horizons often show **marginal or negative improvements**, particularly during rapid regime changes.
 
 > Explicitly identifying failure modes is a core design goal of this project.
 
@@ -36,7 +39,7 @@ Rather than forecasting prices, this project forecasts **realised volatility**, 
 
 1. Compute features and targets from high-frequency candle data  
 2. Perform a chronological train/validation/test split  
-3. Train a **LightGBM** model on engineered volatility features  
+3. Train a **LightGBM** model on engineered volatility features with early stopping based on validation performance
 4. Select the optimal number of boosting iterations using validation data  
 5. Retrain on training + validation data with fixed hyperparameters  
 6. Compare model forecasts to rolling-volatility baselines  
@@ -79,7 +82,7 @@ The pipeline is organised into modular components:
 ### Within-Sample Performance
 
 The figures below show **within-sample performance** on training data.  
-These plots demonstrate how the model learns historical structure and **do not represent out-of-sample performance**.
+These results reflect model fit to historical structure and **should not be interpreted as predictive performance**.
 
 **Features used:**  
 past rolling volatility, lagged rolling volatility, multi-window volatility, intra-day seasonality, volatility slope, z-score, acceleration.
@@ -107,7 +110,7 @@ Residuals highlight regime changes and periods where the model under- or over-re
 
 ![Performance vs Baselines](results/plots/performance_baseline_compare.png)
 
-- RMSE and MAE improvements are measured **relative to the medium-window baseline**  
+- Percentage improvements refer to RMSE/MAE reduction **relative to the medium-window baseline**
 - Improvements vary by horizon and regime and are not guaranteed  
 
 ---
@@ -153,6 +156,15 @@ The GUI allows applying trained models to unseen CSV data:
 > Dark mode 
 
 ![Applied Model Dark](results/plots/applied_model_dark.png)
+
+---
+
+## Limitations
+
+- The model relies on past returns and volatility features only, limiting true predictive signal
+- Performance degrades during rapid regime transitions
+- Forecasts are conditional on current volatility state persistence
+- Improvements are measured relative to simple baselines and may shrink when compared to stronger models (e.g. EWMA, GARCH)
 
 ---
 
