@@ -6,7 +6,8 @@ Using high-frequency candle data, it implements a **LightGBM-based volatility fo
 
 > The goal is **not** to claim tradable “alpha”, but to quantify *when*, *how*, and *by how much* machine-learning forecasts differ from standard rolling-volatility estimates -- and where they fail.
 
-> **Key observation:** The model improves relative error vs rolling-volatility baselines, but gains reduce significantly out-of-sample, indicating partial overfitting alongside genuine structure capture.
+**Key observation:**
+The model improves relative error vs rolling-volatility baselines, but gains reduce significantly out-of-sample, indicating partial overfitting alongside genuine structure capture.
 
 ---
 
